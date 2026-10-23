@@ -1,0 +1,23 @@
+{
+  "source": "mkanakureon/rpg-online-cloudflare#3",
+  "title": "正常系の試験: 設計書の表の正常系を全部書いて通す",
+  "edition": "node",
+  "items": [
+    "- 設計書の表の「正常系」の試験が全部あり、通る（名前は表のとおり）",
+    "- `node scripts/test.mjs` の最後の行が `Result: PASS`",
+    "- 設計書・`migrations/0001_initial.sql` を変えていない"
+  ],
+  "checkLang": "js",
+  "check": "// 守る: docs/guides/working/api-test-design.md\n// 守る: migrations/0001_initial.sql\nimport { readFileSync, existsSync } from 'node:fs';\nimport { runTests, requireTests, check, done } from './scripts/issue-run/check-lib.mjs';\n\n// 試験の名前は設計書の表から読む（Issue に写さない。表が正）\nconst d = 'docs/guides/working/api-test-design.md';\nconst t = existsSync(d) ? readFileSync(d, 'utf8') : '';\nconst names = [...t.matchAll(/^\\| `([^`]+)` \\| 正常系 \\|/gm)].map((m) => m[1]);\ncheck(names.length >= 4, `設計書の正常系が 4 本以上（いま ${names.length}）`);\nrunTests();\nrequireTests(names);\ndone();",
+  "prerequisites": [
+    2
+  ],
+  "tracked": [
+    "migrations/0001_initial.sql",
+    "scripts/issue-run/check-lib.mjs"
+  ],
+  "protected": [
+    "migrations/0001_initial.sql",
+    "scripts/issue-run/check-lib.mjs"
+  ]
+}

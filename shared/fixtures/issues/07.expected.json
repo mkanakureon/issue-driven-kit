@@ -1,0 +1,50 @@
+{
+  "source": "mkanakureon/KaedeScapeBuii#7",
+  "title": "Scape M1 実装 S4: 歩く（一人称・Input System・1〜5/R/Enter/Esc）と EditMode 8 本・PlayMode 5 本のテスト",
+  "edition": "unity",
+  "items": [
+    "- 設計書 9 章の S1〜S4 のテスト 41 本が、その名前のとおりにあり、全部 Passed",
+    "- SmokeTests が通る・S1〜S2 のテストの `.cs` と `Assets/InputSystem_Actions.inputactions` を変えない",
+    "- 期待値は設計書 9 章の表のまま（設計書・基本設計書・前の段のテストの `.cs` は守るファイル）",
+    "- `Packages/`・`ProjectSettings/` を変えない"
+  ],
+  "checkLang": "pwsh",
+  "check": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n# 守る: Docs/Guides/Working/scape-m1-detailed-design.md\n# 守る: Docs/Guides/Working/scape-tool-basic-design.md\n# 守る: Assets/InputSystem_Actions.inputactions\n# 守る: Assets/Tests/EditMode/SmokeTests.cs\n# 守る: Assets/Tests/EditMode/FocalLengthTableTests.cs\n# 守る: Assets/Tests/EditMode/ResolutionTableTests.cs\n# 守る: Assets/Tests/EditMode/ShotSettingsJsonTests.cs\n# 守る: Assets/Tests/EditMode/ShotFileNamerTests.cs\n# 守る: Assets/Tests/EditMode/ShotPathsTests.cs\n# 守る: Assets/Tests/EditMode/ScapeCommandLineTests.cs\n# 守る: Assets/Tests/EditMode/ScapeRigStateTests.cs\n# 守る: Assets/Tests/PlayMode/CameraRigTests.cs\n# 守る: Assets/Tests/PlayMode/ShotCaptureTests.cs\n# 守る: Assets/Tests/PlayMode/AutoShotTests.cs\n$upTo = 'S4'\npwsh -NoProfile -File Scripts/unity-test.ps1 -Platform All -Filter 'KaedeScapeBuii.Tests'\nif ($LASTEXITCODE) { Write-Host 'テストが通らない'; exit 1 }\n$doc = Get-Content Docs/Guides/Working/scape-m1-detailed-design.md -Raw -Encoding utf8\n$order = @('S1', 'S2', 'S4', 'S6a', 'S6b')\n$rows = @([regex]::Matches($doc, '(?m)^\\| `KaedeScapeBuii\\.Tests\\.(EditMode|PlayMode)\\.(\\w+)\\.(\\w+)` \\| (S1|S2|S4|S6a|S6b) \\|'))\nif ($rows.Count -ne 54) { Write-Host \"設計書 9 章のテストの行が $($rows.Count) 個（54 個のはず）\"; exit 1 }\n$need = @($rows | Where-Object { $order.IndexOf($_.Groups[4].Value) -le $order.IndexOf($upTo) })\n$x = Get-ChildItem Logs/UnityTest -Directory | Sort-Object Name | Select-Object -Last 1\n$xml = @{}\nforeach ($p in @($need | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique) + 'EditMode') {\n    if ($xml.ContainsKey($p)) { continue }\n    $f = Join-Path $x.FullName \"$p-results.xml\"\n    if (-not (Test-Path $f)) { Write-Host \"結果の XML が無い: $f\"; exit 1 }\n    $xml[$p] = [xml](Get-Content $f -Raw -Encoding utf8)\n}\nfunction Get-Cases([string]$plat, [string]$n) { @($xml[$plat].SelectNodes(\"//test-case[@fullname='$n' or starts-with(@fullname,'$n(')]\")) }\nforeach ($m in $need) {\n    $plat = $m.Groups[1].Value\n    $n = \"KaedeScapeBuii.Tests.$plat.$($m.Groups[2].Value).$($m.Groups[3].Value)\"\n    $hit = @(Get-Cases $plat $n)\n    if (-not $hit.Count) { Write-Host \"テストが無い: $n\"; exit 1 }\n    if (@($hit | Where-Object { $_.result -ne 'Passed' }).Count) { Write-Host \"通っていない: $n\"; exit 1 }\n}\n$smoke = @(Get-Cases 'EditMode' 'KaedeScapeBuii.Tests.SmokeTests.TestRunnerWorks')\nif (-not $smoke.Count -or $smoke[0].result -ne 'Passed') { Write-Host 'SmokeTests が通っていない'; exit 1 }\n# [TestCase] の場合の数（9 章の表のとおり）\n$cases = [ordered]@{\n    'S1|EditMode|FocalLengthTableTests.HorizontalFovMatchesBasicDesignTable' = 5\n    'S2|PlayMode|ShotCaptureTests.PngSizeMatchesResolution'                 = 3\n    'S6a|PlayMode|TestWorldWalkTests.ForwardOneSecondMovesAtLeastOneMeter'  = 2\n    'S6a|PlayMode|TestWorldShotTests.ThreeResolutionsInEachWorld'           = 2\n}\nforeach ($k in $cases.Keys) {\n    $s, $plat, $m = $k -split '\\|'\n    if ($order.IndexOf($s) -gt $order.IndexOf($upTo)) { continue }\n    $c = @(Get-Cases $plat \"KaedeScapeBuii.Tests.$plat.$m\").Count\n    if ($c -lt $cases[$k]) { Write-Host \"${m} の場合が $c 個（$($cases[$k]) 個のはず）\"; exit 1 }\n}\nWrite-Host \"テストの名前 OK: $($need.Count) 本（S1〜$upTo）＋ SmokeTests\"\nif (git status --porcelain -- Packages ProjectSettings) { Write-Host 'Packages・ProjectSettings を変えている（testables は要らない: 設計書 1.4）'; exit 1 }\nexit 0",
+  "prerequisites": [
+    6
+  ],
+  "tracked": [
+    "Docs/Guides/Working/scape-m1-detailed-design.md",
+    "Docs/Guides/Working/scape-tool-basic-design.md",
+    "Assets/InputSystem_Actions.inputactions",
+    "Assets/Tests/EditMode/SmokeTests.cs",
+    "Assets/Tests/EditMode/FocalLengthTableTests.cs",
+    "Assets/Tests/EditMode/ResolutionTableTests.cs",
+    "Assets/Tests/EditMode/ShotSettingsJsonTests.cs",
+    "Assets/Tests/EditMode/ShotFileNamerTests.cs",
+    "Assets/Tests/EditMode/ShotPathsTests.cs",
+    "Assets/Tests/EditMode/ScapeCommandLineTests.cs",
+    "Assets/Tests/EditMode/ScapeRigStateTests.cs",
+    "Assets/Tests/PlayMode/CameraRigTests.cs",
+    "Assets/Tests/PlayMode/ShotCaptureTests.cs",
+    "Assets/Tests/PlayMode/AutoShotTests.cs",
+    "Scripts/unity-test.ps1"
+  ],
+  "protected": [
+    "Docs/Guides/Working/scape-m1-detailed-design.md",
+    "Docs/Guides/Working/scape-tool-basic-design.md",
+    "Assets/InputSystem_Actions.inputactions",
+    "Assets/Tests/EditMode/SmokeTests.cs",
+    "Assets/Tests/EditMode/FocalLengthTableTests.cs",
+    "Assets/Tests/EditMode/ResolutionTableTests.cs",
+    "Assets/Tests/EditMode/ShotSettingsJsonTests.cs",
+    "Assets/Tests/EditMode/ShotFileNamerTests.cs",
+    "Assets/Tests/EditMode/ShotPathsTests.cs",
+    "Assets/Tests/EditMode/ScapeCommandLineTests.cs",
+    "Assets/Tests/EditMode/ScapeRigStateTests.cs",
+    "Assets/Tests/PlayMode/CameraRigTests.cs",
+    "Assets/Tests/PlayMode/ShotCaptureTests.cs",
+    "Assets/Tests/PlayMode/AutoShotTests.cs",
+    "Scripts/unity-test.ps1"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "source": "mkanakureon/KaedeScapeBuii#4",
+  "title": "Scape M1 詳細設計: テストワールド 2 つを歩いて撮って EXE を書き出すまでの詳細設計書を書く（実装はしない）",
+  "edition": "unity",
+  "items": [
+    "- 設計書が `Docs/Guides/Working/scape-m1-detailed-design.md` にあり、全体で 20,000 字以上・見出し 1 が 1 つ",
+    "- 次の節がある: `## 0.` ゴールと合格の条件（M1-1〜M1-8 を全部挙げ、どの段のどのテスト・確認コマンドで確かめるかの表）／事実の確認（使う Unity の API と設定を、このプロジェクトの版で確かめた根拠）／アセンブリとフォルダー／クラスの一覧／データの形（撮影の設定の JSON・`assets.json`）／テストワールドの寸法／キーと入力／撮影と自動撮影の引数／書き出しの脚本／テストの一覧／Issue の分け方",
+    "- テストの名前（`KaedeScapeBuii.Tests.` で始まる「名前空間.クラス.メソッド」）が 15 個以上あり、EditMode と PlayMode の両方を含む",
+    "- Issue の分け方の節に、実装の Issue（S1・S2・S4・S6a・S6b）ごとの確認コマンドの案（```pwsh）が 5 つ以上ある",
+    "- Mermaid の図が 1 つ以上",
+    "- 文書だけの Issue: `Assets/`・`Scripts/`・`Packages/`・`ProjectSettings/` を変えない",
+    "- 基本設計書（下の「守る」）を変えない"
+  ],
+  "checkLang": "pwsh",
+  "check": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n# 守る: Docs/Guides/Working/scape-tool-basic-design.md\n# 守る: Docs/Guides/Procedures/issue-goal-setting.md\n# 守る: .claude/skills/design-cycle/SKILL.md\n# （書かせる設計書は変数で指す）\n$dir = 'Docs/Guides/Working'; $d = \"$dir/scape-m1-detailed-design.md\"\nif (-not (Test-Path $d)) { Write-Host \"まだ無い: $d\"; exit 1 }\n$t = Get-Content $d -Raw -Encoding utf8\n# コードブロックの中の行頭の # は見出しとして数えない（開いた記号の長さで閉じを見る）\n$fence = ''\n$s = (($t -split \"`n\") | ForEach-Object {\n        if ($fence) { if ($_ -match ('^' + $fence + '`*\\s*$')) { $fence = ''; $_ } else { $_ -replace '^#', ' ' } }\n        elseif ($_ -match '^(`{3,})') { $fence = $Matches[1]; $_ }\n        else { $_ }\n    }) -join \"`n\"\nif ($t.Length -lt 20000) { Write-Host \"全体が短い: $($t.Length) 字（20,000 字以上）\"; exit 1 }\n$h1 = ([regex]::Matches($s, '(?m)^# ')).Count\nif ($h1 -ne 1) { Write-Host \"見出し 1 が $h1 個（1 個にする）\"; exit 1 }\nif (-not [regex]::IsMatch($s, '(?m)^## 0\\.')) { Write-Host '## 0. の節が無い'; exit 1 }\nforeach ($w in '事実の確認', 'アセンブリ', 'クラスの一覧', 'データの形', 'テストワールド', 'キー', '自動撮影', '書き出し', 'テストの一覧', 'Issue の分け方') {\n    if (-not [regex]::IsMatch($s, \"(?m)^##+ .*$([regex]::Escape($w))\")) { Write-Host \"節が無い（見出しに「$w」）\"; exit 1 }\n}\nforeach ($n in 1..8) { if ($t -notmatch \"M1-$n\") { Write-Host \"合格の条件 M1-$n が無い\"; exit 1 } }\n$tests = @([regex]::Matches($t, 'KaedeScapeBuii\\.Tests\\.[A-Za-z0-9_.]+\\.[A-Za-z0-9_]+') | ForEach-Object { $_.Value } | Select-Object -Unique)\nif ($tests.Count -lt 15) { Write-Host \"テストの名前が $($tests.Count) 個（15 個以上）\"; exit 1 }\nif (-not ($tests -match 'EditMode') -or -not ($tests -match 'PlayMode')) { Write-Host 'テストの名前に EditMode と PlayMode の両方が無い'; exit 1 }\n# 「Issue の分け方」の節（次の ## まで。コードブロックの中の見出しは数えない $s で切る）の中の ```pwsh の数\n$m = [regex]::Match($s, '(?ms)^##+ [^\\n]*Issue の分け方.*?(?=^## |\\z)')\n$pw = ([regex]::Matches($m.Value, '(?m)^\\s*```pwsh')).Count\nif ($pw -lt 5) { Write-Host \"Issue の分け方の節の確認コマンドの案が $pw 個（5 個以上）\"; exit 1 }\nif (([regex]::Matches($t, '(?m)^```mermaid')).Count -lt 1) { Write-Host 'Mermaid の図が無い'; exit 1 }\nif (git status --porcelain -- Assets Scripts Packages ProjectSettings) { Write-Host 'コード・設定を変えている（文書だけの Issue）'; exit 1 }\nWrite-Host 'OK'\nexit 0",
+  "prerequisites": [],
+  "tracked": [
+    "Docs/Guides/Working/scape-tool-basic-design.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    ".claude/skills/design-cycle/SKILL.md"
+  ],
+  "protected": [
+    "Docs/Guides/Working/scape-tool-basic-design.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    ".claude/skills/design-cycle/SKILL.md"
+  ]
+}

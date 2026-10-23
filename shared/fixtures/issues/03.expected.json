@@ -1,0 +1,37 @@
+{
+  "source": "mkanakureon/KaedeScapeBuii#3",
+  "title": "ガイド 段3: 付録（用語集・ひな形・チェックリスト・よくある質問）と仕上げ・README からの入口",
+  "edition": "unity",
+  "items": [
+    "- 付録が 5 つある: `## 付録 A` 用語集（表の行が 30 以上）／`## 付録 B` Issue のひな形（Web アプリ・業務アプリ向けにそのまま写せる形を 2 つ以上）／`## 付録 C` チェックリスト（`- [ ]` が 20 以上。始める前・Issue を書く前・回した後）／`## 付録 D` よくある質問（`### Q` で始まる問いが 15 以上）／`## 付録 E` このリポジトリの文書の案内（読む順）",
+    "- 0〜12 章が残っていて、全体で 50,000 字以上・Mermaid の図が 2 つ以上",
+    "- ガイドの中の相対リンク（`](…)` で `http` で始まらないもの）が、全部実在するファイルを指す",
+    "- 「TODO」「TBD」「未記入」「次の段で書く」が残っていない",
+    "- `Docs/Guides/Manuals/README.md` があり、ガイドへのリンクがある。リポジトリの `README.md` の「まず何を読めばいいか」からガイドへのリンクがある",
+    "- 文書だけの Issue: `Assets/`・`Scripts/`・`ProjectSettings/`・`Packages/` を変えない",
+    "- 元の文書（下の「守る」）を変えない"
+  ],
+  "checkLang": "pwsh",
+  "check": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n# 守る: Docs/Reports/2026/10/22/02-kaedevn-issue-run-success-case.md\n# 守る: Docs/Reports/2026/10/22/03-issue-driven-history.md\n# 守る: Docs/Reports/2026/10/22/04-kaedevn-issue-run-build-history.md\n# 守る: Docs/Reports/2026/10/22/05-kaedevn-monorepo-roots.md\n# 守る: Docs/Guides/Procedures/issue-goal-setting.md\n# 守る: Docs/Guides/Working/issue-driven-development.md\n# 守る: .github/ISSUE_TEMPLATE/claude-run.md\n# （書かせる文書・README は変数で指す）\n$dir = 'Docs/Guides/Manuals'; $name = 'issue-driven-guide-for-teams.md'; $d = \"$dir/$name\"\nif (-not (Test-Path $d)) { Write-Host \"まだ無い: $d\"; exit 1 }\n$t = Get-Content $d -Raw -Encoding utf8\n# コードブロックの中の行頭の # は見出しとして数えない（Issue の例・ひな形・コマンドのコメントを章の切れ目と取り違えない）。長さは変えない。'```' の中に '```pwsh' を入れた二重のブロックも、開いた記号の長さで閉じを見る\n$fence = ''\n$s = (($t -split \"`n\") | ForEach-Object {\n        if ($fence) { if ($_ -match ('^' + $fence + '`*\\s*$')) { $fence = ''; $_ } else { $_ -replace '^#', ' ' } }\n        elseif ($_ -match '^(`{3,})') { $fence = $Matches[1]; $_ }\n        else { $_ }\n    }) -join \"`n\"\n\nforeach ($n in 0..12) { if (-not [regex]::IsMatch($s, \"(?m)^## $n\\. \")) { Write-Host \"章が消えた: ## $n.\"; exit 1 } }\n$sec = @{}\nforeach ($a in 'A', 'B', 'C', 'D', 'E') {\n    $m = [regex]::Match($s, \"(?ms)^## 付録 $a.*?(?=^## |\\z)\")\n    if (-not $m.Success) { Write-Host \"付録が無い: 付録 $a\"; exit 1 }\n    $sec[$a] = $m.Value\n}\n$rows = ([regex]::Matches($sec['A'], '(?m)^\\|(?!\\s*-)')).Count - 1\nif ($rows -lt 30) { Write-Host \"用語集の行が $rows（30 以上）\"; exit 1 }\n$tpl = ([regex]::Matches($sec['B'], '(?m)^ # 合格の条件')).Count   # ひな形はコードブロックの中なので、行頭の # は空白に置き換わっている\nif ($tpl -lt 2) { Write-Host \"ひな形が $tpl 個（2 個以上。それぞれに ## 合格の条件）\"; exit 1 }\n$checks = ([regex]::Matches($sec['C'], '(?m)^\\s*- \\[ \\]')).Count\nif ($checks -lt 20) { Write-Host \"チェックリストが $checks 項目（20 以上）\"; exit 1 }\n$qs = ([regex]::Matches($sec['D'], '(?m)^### Q')).Count\nif ($qs -lt 15) { Write-Host \"よくある質問が $qs 個（15 以上）\"; exit 1 }\nif ($t.Length -lt 50000) { Write-Host \"全体が短い: $($t.Length) 字（50,000 字以上）\"; exit 1 }\nif (([regex]::Matches($t, '(?m)^```mermaid')).Count -lt 2) { Write-Host 'Mermaid の図が 2 つ未満'; exit 1 }\nforeach ($w in 'TODO', 'TBD', '未記入', '次の段で書く') { if ($t.Contains($w)) { Write-Host \"残っている: $w\"; exit 1 } }\n$bad = foreach ($l in [regex]::Matches($t, '\\]\\(([^)#\\s]+)(#[^)]*)?\\)')) {\n    $p = $l.Groups[1].Value\n    if ($p -match '^(https?:|mailto:)') { continue }\n    if (-not (Test-Path (Join-Path $dir $p))) { $p }\n}\nif ($bad) { Write-Host \"リンク先が無い: $($bad -join ', ')\"; exit 1 }\n$mr = \"$dir/README.md\"\nif (-not (Test-Path $mr) -or (Get-Content $mr -Raw -Encoding utf8) -notmatch [regex]::Escape($name)) { Write-Host \"$mr が無いか、ガイドへのリンクが無い\"; exit 1 }\n$top = 'README' + '.md'\nif ((Get-Content $top -Raw -Encoding utf8) -notmatch [regex]::Escape(\"$dir/$name\")) { Write-Host 'リポジトリの README からガイドへのリンクが無い'; exit 1 }\nif (git status --porcelain -- Assets Scripts ProjectSettings Packages) { Write-Host 'コード・設定を変えている（文書だけの Issue）'; exit 1 }\nWrite-Host 'OK'\nexit 0",
+  "prerequisites": [
+    2
+  ],
+  "tracked": [
+    "Docs/Reports/2026/10/22/02-kaedevn-issue-run-success-case.md",
+    "Docs/Reports/2026/10/22/03-issue-driven-history.md",
+    "Docs/Reports/2026/10/22/04-kaedevn-issue-run-build-history.md",
+    "Docs/Reports/2026/10/22/05-kaedevn-monorepo-roots.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    "Docs/Guides/Working/issue-driven-development.md",
+    ".github/ISSUE_TEMPLATE/claude-run.md"
+  ],
+  "protected": [
+    "Docs/Reports/2026/10/22/02-kaedevn-issue-run-success-case.md",
+    "Docs/Reports/2026/10/22/03-issue-driven-history.md",
+    "Docs/Reports/2026/10/22/04-kaedevn-issue-run-build-history.md",
+    "Docs/Reports/2026/10/22/05-kaedevn-monorepo-roots.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    "Docs/Guides/Working/issue-driven-development.md",
+    ".github/ISSUE_TEMPLATE/claude-run.md"
+  ]
+}

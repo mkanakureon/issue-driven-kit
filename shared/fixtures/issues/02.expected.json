@@ -1,0 +1,36 @@
+{
+  "source": "mkanakureon/KaedeScapeBuii#2",
+  "title": "ガイド 段2: 7〜12 章（Issue の書き方・無人で回す・結果の読み方・自社で試す手順・チームの運用・よくある失敗）",
+  "edition": "unity",
+  "items": [
+    "- 次の 6 章があり、どれも 2,500 字以上: `## 7.` Issue の書き方（欄・大きさ・Web アプリと業務アプリの例を 3 つ以上: バグ修正・API の追加・画面や帳票の改修など）／`## 8.` 無人で回す（考え方・自社に移すときに差し替える所: テストの入口・使用中の判定・禁止の設定）／`## 9.` 結果の読み方と直し方（報告の読み方・失敗のパターンの表）／`## 10.` 自社の案件で試す手順（試作の計画・最初の 3 件の選び方・やめどき）／`## 11.` チームでの運用（役割・レビュー・セキュリティ・費用・社内の決まり）／`## 12.` よくある失敗と対策（元の事例を一般化した表）",
+    "- 0〜6 章が残っていて、全体で 40,000 字以上",
+    "- コマンドの例（```pwsh・```bash・```powershell・```sh のどれか）が全体で 8 つ以上",
+    "- 「Web アプリ」「業務アプリ」の語がある",
+    "- 文書だけの Issue: `Assets/`・`Scripts/`・`ProjectSettings/`・`Packages/` を変えない",
+    "- 元の文書（下の「守る」）を変えない"
+  ],
+  "checkLang": "pwsh",
+  "check": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n# 守る: Docs/Reports/2026/10/22/02-kaedevn-issue-run-success-case.md\n# 守る: Docs/Reports/2026/10/22/03-issue-driven-history.md\n# 守る: Docs/Reports/2026/10/22/04-kaedevn-issue-run-build-history.md\n# 守る: Docs/Reports/2026/10/22/05-kaedevn-monorepo-roots.md\n# 守る: Docs/Guides/Procedures/issue-goal-setting.md\n# 守る: Docs/Guides/Working/issue-driven-development.md\n# 守る: Docs/Guides/Working/issue-run.md\n# （書かせる文書は変数で指す）\n$dir = 'Docs/Guides/Manuals'; $d = \"$dir/issue-driven-guide-for-teams.md\"\nif (-not (Test-Path $d)) { Write-Host \"まだ無い: $d\"; exit 1 }\n$t = Get-Content $d -Raw -Encoding utf8\n# コードブロックの中の行頭の # は見出しとして数えない（Issue の例・ひな形・コマンドのコメントを章の切れ目と取り違えない）。長さは変えない。'```' の中に '```pwsh' を入れた二重のブロックも、開いた記号の長さで閉じを見る\n$fence = ''\n$s = (($t -split \"`n\") | ForEach-Object {\n        if ($fence) { if ($_ -match ('^' + $fence + '`*\\s*$')) { $fence = ''; $_ } else { $_ -replace '^#', ' ' } }\n        elseif ($_ -match '^(`{3,})') { $fence = $Matches[1]; $_ }\n        else { $_ }\n    }) -join \"`n\"\n\nforeach ($n in 0..6) { if (-not [regex]::IsMatch($s, \"(?m)^## $n\\. \")) { Write-Host \"段 1 の章が消えた: ## $n.\"; exit 1 } }\nforeach ($n in 7..12) {\n    $m = [regex]::Match($s, \"(?ms)^## $n\\. .*?(?=^## |\\z)\")\n    if (-not $m.Success) { Write-Host \"章が無い: ## $n.\"; exit 1 }\n    if ($m.Value.Length -lt 2500) { Write-Host \"## $n. が短い: $($m.Value.Length) 字（2,500 字以上）\"; exit 1 }\n}\nif ($t.Length -lt 40000) { Write-Host \"全体が短い: $($t.Length) 字（40,000 字以上）\"; exit 1 }\n$codes = ([regex]::Matches($t, '(?m)^```(pwsh|bash|powershell|sh)\\s*$')).Count\nif ($codes -lt 8) { Write-Host \"コマンドの例が $codes 個（8 個以上）\"; exit 1 }\nforeach ($w in 'Web アプリ', '業務アプリ') { if ($t -notmatch [regex]::Escape($w)) { Write-Host \"無い語: $w\"; exit 1 } }\nif (git status --porcelain -- Assets Scripts ProjectSettings Packages) { Write-Host 'コード・設定を変えている（文書だけの Issue）'; exit 1 }\nWrite-Host 'OK'\nexit 0",
+  "prerequisites": [
+    1
+  ],
+  "tracked": [
+    "Docs/Reports/2026/10/22/02-kaedevn-issue-run-success-case.md",
+    "Docs/Reports/2026/10/22/03-issue-driven-history.md",
+    "Docs/Reports/2026/10/22/04-kaedevn-issue-run-build-history.md",
+    "Docs/Reports/2026/10/22/05-kaedevn-monorepo-roots.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    "Docs/Guides/Working/issue-driven-development.md",
+    "Docs/Guides/Working/issue-run.md"
+  ],
+  "protected": [
+    "Docs/Reports/2026/10/22/02-kaedevn-issue-run-success-case.md",
+    "Docs/Reports/2026/10/22/03-issue-driven-history.md",
+    "Docs/Reports/2026/10/22/04-kaedevn-issue-run-build-history.md",
+    "Docs/Reports/2026/10/22/05-kaedevn-monorepo-roots.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    "Docs/Guides/Working/issue-driven-development.md",
+    "Docs/Guides/Working/issue-run.md"
+  ]
+}

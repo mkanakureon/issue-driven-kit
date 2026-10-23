@@ -1,0 +1,31 @@
+{
+  "source": "mkanakureon/KaedeScapeBuii#10",
+  "title": "Scape S4b 詳細設計: 三人称で歩き（MMO の動かし方・カプセルの自キャラ）、一人称で微調整して撮る・「画像を保存しました」の知らせ（実装はしない）",
+  "edition": "unity",
+  "items": [
+    "- 設計書が `Docs/Guides/Working/scape-s4b-detailed-design.md` にあり、全体で 15,000 字以上・見出し 1 が 1 つ",
+    "- 次の節がある: `## 0.` ゴールと合格の条件（機械で確かめるものと、人が見るものを分けた表）／事実の確認／操作（キーの表）／カメラ（三人称のカメラ・壁を抜けない）／自キャラ／撮影の一人称（切り替え・自キャラを消す）／微調整／保存の知らせ／日本語の字／既存のテストの扱い／テストの一覧／Issue の分け方",
+    "- 知らせの文「画像を保存しました」「保存できませんでした」が書いてある",
+    "- 既存のテストの扱いの節で、M1 のテスト 54 本（M1 詳細設計 9 章の表）を 1 本ずつ挙げ、そのまま・変える・やめるのどれかと理由を書いている",
+    "- 新しいテストの名前（`KaedeScapeBuii.Tests.` で始まる「名前空間.クラス.メソッド」で M1 に無いもの）が 10 個以上あり、PlayMode を含む",
+    "- Issue の分け方の節に、実装の Issue の確認コマンドの案（```pwsh）が 1 つ以上ある",
+    "- Mermaid の図が 1 つ以上（三人称 ⇄ 一人称の切り替えの図を推す）",
+    "- 文書だけの Issue: `Assets/`・`Scripts/`・`Packages/`・`ProjectSettings/` を変えない",
+    "- 基本設計書・M1 の詳細設計書（下の「守る」）を変えない"
+  ],
+  "checkLang": "pwsh",
+  "check": "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n# 守る: Docs/Guides/Working/scape-tool-basic-design.md\n# 守る: Docs/Guides/Working/scape-m1-detailed-design.md\n# 守る: Docs/Guides/Procedures/issue-goal-setting.md\n# 守る: .claude/skills/design-cycle/SKILL.md\n# （書かせる設計書は変数で指す）\n$dir = 'Docs/Guides/Working'; $d = \"$dir/scape-s4b-detailed-design.md\"\nif (-not (Test-Path $d)) { Write-Host \"まだ無い: $d\"; exit 1 }\n$t = Get-Content $d -Raw -Encoding utf8\n# コードブロックの中の行頭の # は見出しとして数えない（開いた記号の長さで閉じを見る）\n$fence = ''\n$s = (($t -split \"`n\") | ForEach-Object {\n        if ($fence) { if ($_ -match ('^' + $fence + '`*\\s*$')) { $fence = ''; $_ } else { $_ -replace '^#', ' ' } }\n        elseif ($_ -match '^(`{3,})') { $fence = $Matches[1]; $_ }\n        else { $_ }\n    }) -join \"`n\"\nif ($t.Length -lt 15000) { Write-Host \"全体が短い: $($t.Length) 字（15,000 字以上）\"; exit 1 }\n$h1 = ([regex]::Matches($s, '(?m)^# ')).Count\nif ($h1 -ne 1) { Write-Host \"見出し 1 が $h1 個（1 個にする）\"; exit 1 }\nif (-not [regex]::IsMatch($s, '(?m)^## 0\\.')) { Write-Host '## 0. の節が無い'; exit 1 }\nforeach ($w in '事実の確認', '操作', 'カメラ', '自キャラ', '撮影の一人称', '微調整', '保存の知らせ', '日本語', '既存のテスト', 'テストの一覧', 'Issue の分け方') {\n    if (-not [regex]::IsMatch($s, \"(?m)^##+ .*$([regex]::Escape($w))\")) { Write-Host \"節が無い（見出しに「$w」）\"; exit 1 }\n}\nforeach ($w in '画像を保存しました', '保存できませんでした') { if (-not $t.Contains($w)) { Write-Host \"知らせの文「$w」が無い\"; exit 1 } }\n# M1 のテスト 54 本（M1 詳細設計 9 章の表）を、全部「既存のテストの扱い」で挙げているか\n$m1doc = Get-Content \"$dir/scape-m1-detailed-design.md\" -Raw -Encoding utf8\n$m1 = @([regex]::Matches($m1doc, '(?m)^\\| `(KaedeScapeBuii\\.Tests\\.(?:EditMode|PlayMode)\\.\\w+\\.\\w+)` \\| (?:S1|S2|S4|S6a|S6b) \\|') | ForEach-Object { $_.Groups[1].Value })\nif ($m1.Count -ne 54) { Write-Host \"M1 詳細設計のテストの行が $($m1.Count) 本（54 本のはず）\"; exit 1 }\n$miss = @($m1 | Where-Object { -not $t.Contains($_) })\nif ($miss.Count) { Write-Host \"既存のテストの扱いに無い M1 のテスト $($miss.Count) 本（例: $($miss[0])）\"; exit 1 }\n# 新しいテストの名前（M1 に無いもの）が 10 個以上・PlayMode を含む\n$all = @([regex]::Matches($t, 'KaedeScapeBuii\\.Tests\\.(?:EditMode|PlayMode)\\.\\w+\\.\\w+') | ForEach-Object { $_.Value } | Select-Object -Unique)\n$new = @($all | Where-Object { $m1 -notcontains $_ })\nif ($new.Count -lt 10) { Write-Host \"新しいテストの名前が $($new.Count) 個（10 個以上）\"; exit 1 }\nif (-not ($new -match '\\.PlayMode\\.')) { Write-Host '新しいテストに PlayMode が無い'; exit 1 }\n# 「Issue の分け方」の節（次の ## まで）の中の ```pwsh\n$m = [regex]::Match($s, '(?ms)^##+ [^\\n]*Issue の分け方.*?(?=^## |\\z)')\n$pw = ([regex]::Matches($m.Value, '(?m)^\\s*```pwsh')).Count\nif ($pw -lt 1) { Write-Host 'Issue の分け方の節に確認コマンドの案（```pwsh）が無い'; exit 1 }\nif (([regex]::Matches($t, '(?m)^```mermaid')).Count -lt 1) { Write-Host 'Mermaid の図が無い'; exit 1 }\nif (git status --porcelain -- Assets Scripts Packages ProjectSettings) { Write-Host 'コード・設定を変えている（文書だけの Issue）'; exit 1 }\nWrite-Host 'OK'\nexit 0",
+  "prerequisites": [],
+  "tracked": [
+    "Docs/Guides/Working/scape-tool-basic-design.md",
+    "Docs/Guides/Working/scape-m1-detailed-design.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    ".claude/skills/design-cycle/SKILL.md"
+  ],
+  "protected": [
+    "Docs/Guides/Working/scape-tool-basic-design.md",
+    "Docs/Guides/Working/scape-m1-detailed-design.md",
+    "Docs/Guides/Procedures/issue-goal-setting.md",
+    ".claude/skills/design-cycle/SKILL.md"
+  ]
+}

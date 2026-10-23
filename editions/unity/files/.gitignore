@@ -1,0 +1,48 @@
+# ===== Unity（生成物は追跡しない。Library は worktree ごとに別。消すと全部を取り込み直す） =====
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE（Unity が作り直す）
+.vs/
+.vscode/
+.idea/
+*.csproj
+*.unityproj
+*.sln
+*.slnx
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# 書き出したゲーム
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+
+# ===== Claude（ローカル設定は各自のもの。スキルは追跡する） =====
+.claude/settings.local.json
+
+# ===== レポート配下のキャプチャ画像（追跡しない） =====
+Docs/Reports/**/*.png
+Docs/Reports/**/*.jpg
+
+# ===== OS =====
+Thumbs.db
+Desktop.ini
+.DS_Store

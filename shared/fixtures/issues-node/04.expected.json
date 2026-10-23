@@ -1,0 +1,26 @@
+{
+  "source": "mkanakureon/rpg-online-cloudflare#4",
+  "title": "異常系の試験: 設計書の表の異常系を全部書いて通す・落ちたら検証を直す",
+  "edition": "node",
+  "items": [
+    "- 設計書の表の「異常系」の試験が全部あり、通る（名前は表のとおり）",
+    "- 設計書の表の「正常系」の試験も、全部あって通る（#3 の分を消さない・弱めない）",
+    "- `node scripts/test.mjs` の最後の行が `Result: PASS`",
+    "- 設計書・`docs/api-contract.md`・`migrations/0001_initial.sql` を変えていない"
+  ],
+  "checkLang": "js",
+  "check": "// 守る: docs/guides/working/api-test-design.md\n// 守る: docs/api-contract.md\n// 守る: migrations/0001_initial.sql\nimport { readFileSync, existsSync } from 'node:fs';\nimport { runTests, requireTests, check, done } from './scripts/issue-run/check-lib.mjs';\n\nconst d = 'docs/guides/working/api-test-design.md';\nconst t = existsSync(d) ? readFileSync(d, 'utf8') : '';\nconst rows = [...t.matchAll(/^\\| `([^`]+)` \\| (正常系|異常系) \\|/gm)];\nconst abnormal = rows.filter((r) => r[2] === '異常系').map((r) => r[1]);\nconst normal = rows.filter((r) => r[2] === '正常系').map((r) => r[1]);\ncheck(abnormal.length >= 8, `設計書の異常系が 8 本以上（いま ${abnormal.length}）`);\ncheck(normal.length >= 4, `設計書の正常系が 4 本以上（いま ${normal.length}）`);\nrunTests();\nrequireTests([...normal, ...abnormal]);\ndone();",
+  "prerequisites": [
+    3
+  ],
+  "tracked": [
+    "docs/api-contract.md",
+    "migrations/0001_initial.sql",
+    "scripts/issue-run/check-lib.mjs"
+  ],
+  "protected": [
+    "docs/api-contract.md",
+    "migrations/0001_initial.sql",
+    "scripts/issue-run/check-lib.mjs"
+  ]
+}

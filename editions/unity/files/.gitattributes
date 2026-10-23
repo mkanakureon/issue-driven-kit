@@ -1,0 +1,28 @@
+# 改行コードの規則（kaedevn 2026-09-15 と同じ）。git の中身は LF、ディスク上も LF に揃える。
+# 例外は Windows のバッチだけ（CRLF でないとラベルやジャンプが誤動作する）。
+* text=auto eol=lf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Unity の YAML（シーン・プレハブ・アセット）。差分は見るが、マージは Unity の UnityYAMLMerge に任せる
+*.unity text eol=lf merge=unityyamlmerge
+*.prefab text eol=lf merge=unityyamlmerge
+*.asset text eol=lf merge=unityyamlmerge
+*.meta text eol=lf
+*.mat text eol=lf
+*.anim text eol=lf
+*.controller text eol=lf
+
+# バイナリ（自動判定に任せず明示）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.tga binary
+*.wav binary
+*.mp3 binary
+*.ogg binary
+*.fbx binary
+*.exe binary
+*.dll binary
+*.pdf binary

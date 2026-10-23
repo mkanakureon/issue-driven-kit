@@ -1,0 +1,9 @@
+{
+  "name": "issue-driven-kit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": "22.14.0" },
+  "scripts": { "test": "node scripts/test.mjs" },
+  "issueKit": { "testRunner": "node", "testFiles": "tests/*.test.mjs" }
+}

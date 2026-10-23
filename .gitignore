@@ -1,0 +1,4 @@
+node_modules/
+.issue-run/
+*.log
+.DS_Store

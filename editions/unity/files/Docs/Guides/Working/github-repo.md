@@ -1,0 +1,54 @@
+# GitHub リポジトリ（`origin`）の運用
+
+このプロジェクトの `origin` は private の GitHub に置く（kaedevn と同じ運用）。Issue の無人実行（`issue-run.md`）・PR・push はこれを前提にする。
+
+## 0. 守ること
+
+| | 理由 |
+|---|---|
+| **push はユーザーが指示したときだけ**（`/push`） | 外向きで取り消しにくい |
+| **`--force` を打たない** | 履歴の書き換えは GitHub にも効く。別件として相談する |
+| **100MB を超えるファイルを add しない** | GitHub が拒否する。履歴に入れてから消すのは大仕事 |
+| **買った素材（Asset Store 等）の扱いはライセンスを見てから** | 再配布できないものは private でも載せない方針にするか、ユーザーが決める（決めたらここに書く） |
+
+## 1. 最初の 1 回（リポジトリを作る）
+
+GitHub にリポジトリを作るのは外向きの操作。Claude はユーザーの了承を得てから打つ。
+
+```powershell
+winget install --id GitHub.cli -e      # gh が無ければ
+gh auth login                          # mkanakureon でログイン
+git init -b main                       # まだ git でなければ
+git add -A
+git commit -m "chore: 初期コミット"
+gh repo create mkanakureon/KaedeScapeBuii --private --source . --remote origin --push
+```
+
+できたら `git remote get-url origin` が GitHub を指す。`issue-run.ps1` はここからリポジトリ名を読む。
+
+## 2. push する
+
+```powershell
+git status --porcelain            # 空になるまで commit する（未コミットは送られない）
+git push origin main
+git ls-remote origin refs/heads/main   # 合否はこれと
+git rev-parse main                     # これの SHA が一致すること
+```
+
+push の散文（`Writing objects` など）で判断しない。大きい差分が HTTP 408 で切られたときは push スキルの小分けの手順。
+
+## 3. 弾かれたとき
+
+| 出たもの | 意味 | やること |
+|---|---|---|
+| `this exceeds GitHub's file size limit of 100.00 MB` | 100MB 超を add した | そのファイルを `.gitignore` に足して commit をやり直す |
+| `Authentication failed` | 認証 | `gh auth status` |
+| `HTTP 408` / `RPC failed` | 送信が大きい | push スキルの小分け |
+| `rejected (fetch first)` | GitHub 側に無いコミットがある | 止めて調べる。**force しない** |
+
+## 4. 関連
+
+| | |
+|---|---|
+| push・PR・commit | `.claude/skills/push`・`pr`・`commit` |
+| Issue を作る・回す | `.claude/skills/github-issue`・`Docs/Guides/Working/issue-run.md` |
