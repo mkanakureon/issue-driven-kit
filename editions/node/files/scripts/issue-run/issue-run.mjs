@@ -165,7 +165,7 @@ function unmetPrerequisites(nums) {
     if (v.state === 'CLOSED') continue;
     if (!v.labels.some((l) => l.name === L.LABELS.done.name)) { unmet.push(`#${n}（合格していない）`); continue; }
     const last = L.lastRunComment(v.comments, canWrite);
-    if (!last) continue;
+    if (!last) { unmet.push(`#${n}（書き込みの権限のある人の結果のコメントが無い）`); continue; }
     const shas = L.headShasFromComment(last.body).filter((s) => run('git', ['-C', ROOT, 'cat-file', '-e', `${s}^{commit}`]).code === 0);
     const missing = shas.filter((s) => run('git', ['-C', ROOT, 'merge-base', '--is-ancestor', s, 'HEAD']).code !== 0);
     if (missing.length) unmet.push(`#${n}（合格したコミット ${missing[0]} がブランチ ${BRANCH} に無い）`);
