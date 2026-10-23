@@ -6,6 +6,7 @@ Claude Code に GitHub の Issue を**合格するまで無人で**進めさせ�
 > **いまの状態（2026-10-23）**
 > - **Unity 版**は使えます（KaedeScapeBuii で Issue 13 件が合格した実物の写し）。
 > - **Node 版**（Windows・Mac・Node.js だけ）は、**Windows で確かめました**（キットの試験・見本のプロジェクトに入れてテストの入口を 3 つで回す・点検・DryRun。キット自身も Node 版で Issue 駆動にしています）。
+> - **Windows で確かめた手順**（自分のリポジトリで Claude Code にキットのパスを示して入れるところから、点検と DryRun まで。出力つき）は、版ごとに 1 本ずつあります：[Windows で確かめる（Unity 版）](shared/manuals/issue-driven-kit-windows-check.md#windows-で確かめるunity-版)・[Windows で確かめる（Node 版）](shared/manuals/issue-driven-kit-windows-check.md#windows-で確かめるnode-版)。
 > - **Mac は人が確かめます。** 手順と期待する出力は導入ガイドの「Mac で確かめる」にあります。結果が出るまで「Mac で動く」とは言いません。最初の利用先（rpg-online-cloudflare）で Mac の無人の回を回すのも、この手順の後です（基本設計の K-6・K-7）。
 
 ## 版を選ぶ
@@ -26,7 +27,7 @@ Claude Code に GitHub の Issue を**合格するまで無人で**進めさせ�
 | `shared/spec/issue-run-spec.md` | 無人の Issue 実行の仕様の正（2 つの版はこれを実装する） |
 | `shared/fixtures/issues/`・`issues-node/` | 見本（Issue の本文と、読み取りの答え。Unity 版と Node 版）。2 つの版が同じに読むか・ほかの版の確認コマンドを読まないかを試験で見る |
 | `shared/claude-md/` | 両方の版の `CLAUDE.md` に同じ文で入る決まり（原則・進め方の決まり） |
-| `shared/manuals/` | 使う人向けの説明書（導入ガイド・チーム向けガイド・プロンプトの手順書・提案の説明書・新しいリポジトリに入れる手順書） |
+| `shared/manuals/` | 使う人向けの説明書（導入ガイド・Windows で確かめる手順・チーム向けガイド・プロンプトの手順書・提案の説明書・新しいリポジトリに入れる手順書） |
 | `shared/reading/` | 読み物（なぜ提案が効いたか）。元のリポジトリの記録そのもの（作業の記録・プロンプトの記録・事例）は private なので、このキットには入れていない |
 | `editions/unity/` | Unity 版：`files/`（利用先に写す物）と `install.ps1` |
 | `editions/node/` | Node 版：`files/`（利用先に写す物）と `install.mjs` |

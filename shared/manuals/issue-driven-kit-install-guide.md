@@ -17,7 +17,7 @@ project: issue-driven-kit
 
 | 道具・OS | 版 | 確かめたこと |
 |---|---|---|
-| OS | **Windows 11**（Home 10.0.26200） | Node 版：キットの試験・入れる脚本・テストの入口（見本のプロジェクト）・点検・DryRun。Unity 版：KaedeScapeBuii で Issue 13 件が合格 |
+| OS | **Windows 11**（Home 10.0.26200） | Node 版：キットの試験・入れる脚本・テストの入口（見本のプロジェクト）・点検・DryRun。Unity 版：KaedeScapeBuii で Issue 13 件が合格、空のフォルダーに入れて入れる脚本・テストの入口（Unity 6000.6.6f1）・点検・DryRun。手順と出力は版ごとに「[Windows で確かめる（Unity 版）](issue-driven-kit-windows-check.md#windows-で確かめるunity-版)」「[Windows で確かめる（Node 版）](issue-driven-kit-windows-check.md#windows-で確かめるnode-版)」 |
 | OS | **Mac** | **まだ確かめていません。** 人が「[Mac で確かめる](#mac-で確かめる)」の手順で回し、結果をこの表に書き足します |
 | Node.js | 22.14.0 | `node --version` → `v22.14.0` |
 | npm | 11.4.2 | `npm --version` → `11.4.2` |
