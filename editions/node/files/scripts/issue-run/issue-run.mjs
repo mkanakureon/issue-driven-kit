@@ -140,11 +140,20 @@ function initLabels() {
     step(`ラベルを作った: ${l.name}`);
   }
 }
+// 書き込みの権限（仕様 1.2）。1 回の起動の中では、同じ人の結果を使い回す
+const canWrite = L.permissionChecker((login) => {
+  const r = run('gh', ['api', `repos/${REPO}/collaborators/${encodeURIComponent(login)}/permission`, '--jq', '.permission'], { cwd: ROOT });
+  if (r.code !== 0) throw new Error(`${r.stdout}${r.stderr}`.trim() || `gh api の終了コード ${r.code}`);
+  return r.stdout.trim();
+});
+// 対象と、権限が無いので外した Issue（仕様 1 章）
 function targetIssues() {
-  if (ONE_ISSUE > 0) return [ghJson(['issue', 'view', String(ONE_ISSUE), '--repo', REPO, '--json', 'number,title,labels,body'])];
-  const list = ghJson(['issue', 'list', '--repo', REPO, '--label', L.LABELS.run.name, '--state', 'open', '--limit', '200', '--json', 'number,title,labels,body']);
-  return list.filter((t) => !t.labels.some((l) => SKIP.includes(l.name))).sort((a, b) => a.number - b.number).slice(0, MAX_ISSUES);
+  const fields = 'number,title,labels,body,author';
+  if (ONE_ISSUE > 0) return L.selectTargets([ghJson(['issue', 'view', String(ONE_ISSUE), '--repo', REPO, '--json', fields])], { canWrite });
+  const list = ghJson(['issue', 'list', '--repo', REPO, '--label', L.LABELS.run.name, '--state', 'open', '--limit', '200', '--json', fields]);
+  return L.selectTargets(list, { canWrite, skip: SKIP, max: MAX_ISSUES });
 }
+const excludedText = (ex) => ex.map((e) => `#${e.number}（${e.reason}）`).join(' ');
 const trackedFiles = () => run('git', ['-C', ROOT, 'ls-files']).stdout.split(/\r?\n/).filter(Boolean);
 const protectedOf = (code) => L.protectedFiles(code, { root: ROOT, trackedList: trackedFiles() });
 
@@ -155,7 +164,7 @@ function unmetPrerequisites(nums) {
     const v = ghJson(['issue', 'view', String(n), '--repo', REPO, '--json', 'state,labels,comments']);
     if (v.state === 'CLOSED') continue;
     if (!v.labels.some((l) => l.name === L.LABELS.done.name)) { unmet.push(`#${n}（合格していない）`); continue; }
-    const last = v.comments.filter((c) => /^issue-run\.(ps1|mjs)/.test(c.body)).at(-1);
+    const last = L.lastRunComment(v.comments, canWrite);
     if (!last) continue;
     const shas = L.headShasFromComment(last.body).filter((s) => run('git', ['-C', ROOT, 'cat-file', '-e', `${s}^{commit}`]).code === 0);
     const missing = shas.filter((s) => run('git', ['-C', ROOT, 'merge-base', '--is-ancestor', s, 'HEAD']).code !== 0);
@@ -210,8 +219,8 @@ for (const f of [PROMPT_FILE, SETTINGS_TEMPLATE, STOP_HOOK]) if (!existsSync(f))
 if (!resolveCmd('gh')) { console.error('gh が無い。GitHub CLI を入れる'); process.exit(1); }
 if (run('gh', ['auth', 'status']).code !== 0) { console.error('gh にログインしていない。gh auth login を先に。'); process.exit(1); }
 
-const targets = targetIssues();
-step(`対象 ${targets.length} 件: ${targets.map((t) => `#${t.number}`).join(' ')}`);
+const { targets, excluded } = targetIssues();
+step(`対象 ${targets.length} 件: ${targets.map((t) => `#${t.number}`).join(' ')}${excluded.length ? `・外した ${excluded.length} 件: ${excludedText(excluded)}` : ''}`);
 if (DRY_RUN) {
   for (const t of targets) {
     const c = L.parsePassCriteria(t.body);
@@ -260,7 +269,7 @@ try {
 
   const seen = new Set();
   while (seen.size < MAX_ISSUES) {
-    const t = targetIssues().find((x) => !seen.has(x.number));
+    const t = targetIssues().targets.find((x) => !seen.has(x.number));
     if (!t) break;
     seen.add(t.number);
     const number = t.number;

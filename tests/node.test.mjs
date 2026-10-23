@@ -108,6 +108,38 @@ test('報告の「合格」の行', () => {
   assert.ok(!lib.reportClaimsPass('## 結果: 未合格'));
 });
 
+// 権限を返す関数を外から与える（GitHub を呼ばない）。読めない人は投げる
+const perms = { owner: 'admin', member: 'write', lead: 'maintain', guest: 'read', triager: 'triage' };
+const permissionOf = (login) => { if (!(login in perms)) throw new Error('HTTP 404'); return perms[login]; };
+const issue = (number, login, labels = ['claude-run']) => ({ number, author: { login }, labels: labels.map((name) => ({ name })) });
+
+test('無人の回（Node 版）: 書き込みの権限の無い人が作った Issue を拾わない', () => {
+  const r = lib.selectTargets([issue(3, 'guest'), issue(4, 'triager'), issue(5, 'stranger'), issue(6, undefined)], { canWrite: lib.permissionChecker(permissionOf) });
+  assert.deepEqual(r.targets, []);
+  assert.deepEqual(r.excluded.map((e) => e.number), [3, 4, 5, 6]);
+  assert.match(r.excluded[0].reason, /guest に書き込みの権限が無い（read）/);
+  assert.match(r.excluded[2].reason, /stranger の権限が読めない（HTTP 404）/);   // 読めなければ拾わない側
+});
+
+test('無人の回（Node 版）: 書き込みの権限のある人が作った Issue は拾う', () => {
+  let calls = 0;
+  const canWrite = lib.permissionChecker((l) => { calls++; return permissionOf(l); });
+  const r = lib.selectTargets([issue(9, 'owner'), issue(2, 'member'), issue(7, 'lead'), issue(8, 'owner', ['claude-run', 'claude-done']), issue(10, 'guest'), issue(11, 'owner')],
+    { canWrite, skip: ['claude-working', 'claude-done', 'claude-failed'], max: 3 });
+  assert.deepEqual(r.targets.map((t) => t.number), [2, 7, 9]);
+  assert.deepEqual(r.excluded.map((e) => e.number), [10]);
+  assert.equal(calls, 4);   // 同じ人は 1 回だけ問う
+});
+
+test('無人の回（Node 版）: 前提の確かめは書き込みの権限のある人のコメントだけを数える', () => {
+  const canWrite = lib.permissionChecker(permissionOf);
+  const mine = 'issue-run.mjs: **PASS** — 6 分（x）・1 回・コミット 1 件・作業場所 app（main・HEAD 81093d6c）・ログ y/';
+  const fake = 'issue-run.mjs: **PASS** — 1 分（x）・1 回・コミット 1 件・作業場所 app（main・HEAD deadbeef）・ログ y/';
+  const comments = [{ author: { login: 'owner' }, body: mine }, { author: { login: 'guest' }, body: fake }, { author: { login: 'stranger' }, body: fake }, { author: { login: 'member' }, body: 'ありがとう' }];
+  assert.deepEqual(lib.headShasFromComment(lib.lastRunComment(comments, canWrite).body), ['81093d6c']);
+  assert.equal(lib.lastRunComment(comments.slice(1), canWrite), undefined);
+});
+
 // ---- 外に触る部品（GitHub と Claude を呼ばない範囲） ----
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
