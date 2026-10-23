@@ -19,7 +19,7 @@ project: issue-driven-kit
 > [!NOTE]
 > - パスは、キットを `C:\work\issue-driven-kit`、自分のリポジトリを `C:\work\<自分のリポジトリ>` に置いた形で書きます。
 > - **入力するプロンプト**は `text` の枠、**実行するコマンド**は `powershell` の枠です（PowerShell 7 の窓で打ちます）。
-> - 期待する出力は、2026-10-23 にこの手順の仮の利用先（下の各節の「仮の利用先」）で回して得たものです。手順 4〜6 は Claude Code がプロンプトを受けて打つコマンドと同じものを直接回し、その出力を書いています。
+> - 期待する出力は、2026-10-23 にこの手順の仮の利用先（下の各節の「仮の利用先」）で回して得たものです。**プロンプトの段（U4〜U9・N4〜N9）は、対話の Claude Code では回していません。** プロンプトを受けた Claude Code が打つコマンド（導入ガイドの手順 4・5 に書いたもの）を同じ順で直接回し、その出力を書いています。Claude Code の動きの欄は、導入ガイドの「Claude Code がすること」の表に書いた期待です。
 
 ---
 
@@ -55,7 +55,7 @@ gh auth status
 | `pwsh --version` | `PowerShell 7.6.7`（7 であること） | 0 |
 | `git --version` | `git version 2.55.0.windows.5` | 0 |
 | `gh --version` | `gh version 2.103.0 (2026-10-21)` | 0 |
-| `gh auth status` | `Logged in to github.com` を含む | 0 |
+| `gh auth status` | `✓ Logged in to github.com account <アカウント> (keyring)` を含む | 0 |
 | Unity | Unity Hub に、プロジェクトの版のエディタ（`C:\Program Files\Unity\Hub\Editor\<版>\Editor\Unity.exe`）がある | — |
 
 道具の段に `Result:` 行は出ません。足りない物は導入ガイドの「手順 1：道具をそろえる」で入れます。
@@ -73,7 +73,7 @@ git clone https://github.com/mkanakureon/issue-driven-kit.git
 
 ### U3 自分のリポジトリのフォルダーで Claude Code を起動する
 
-自分のリポジトリは、GitHub に `origin` があるものにします（無いと U8 の点検が `NG origin` で落ち、U9 の DryRun が止まります）。
+自分のリポジトリは、GitHub に `origin` があるものにします（無いと U8 の点検が `NG origin` で落ち、U9 の DryRun が `InvalidOperation: … null 値の式に対してメソッドを呼び出すことはできません。` で落ちます。終了コード 1）。
 
 ```powershell
 cd C:\work\<自分のリポジトリ>
@@ -92,7 +92,7 @@ claude
 C:\work\issue-driven-kit の導入ガイドを読んで、このリポジトリに Unity 版を入れて。まず -DryRun で、写すファイルと、ぶつかるファイルを見せて
 ```
 
-Claude Code は導入ガイドを読み、U5 のコマンドを打って一覧を見せ、そこで止まります。
+期待する動き：Claude Code は導入ガイドを読み、U5 のコマンドを打って一覧を見せ、そこで止まります。
 
 | 期待する出力 | 終了コード |
 |---|---|
@@ -239,7 +239,7 @@ gh auth status
 | `npm --version` | `11.4.2` | 0 |
 | `git --version` | `git version 2.55.0.windows.5` | 0 |
 | `gh --version` | `gh version 2.103.0 (2026-10-21)` | 0 |
-| `gh auth status` | `Logged in to github.com` を含む | 0 |
+| `gh auth status` | `✓ Logged in to github.com account <アカウント> (keyring)` を含む | 0 |
 
 道具の段に `Result:` 行は出ません。足りない物は導入ガイドの「手順 1：道具をそろえる」で入れます。
 
@@ -275,7 +275,7 @@ claude
 C:\work\issue-driven-kit の導入ガイドを読んで、このリポジトリに Node 版を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて
 ```
 
-Claude Code は導入ガイドを読み、N5 のコマンドを打って一覧を見せ、そこで止まります。
+期待する動き：Claude Code は導入ガイドを読み、N5 のコマンドを打って一覧を見せ、そこで止まります。
 
 | 期待する出力 | 終了コード |
 |---|---|
@@ -334,7 +334,7 @@ node scripts/test.mjs
 node scripts/test.mjs --filter 'どれにも当たらない名前'
 Set-Content -Encoding utf8NoBOM test\fail.test.ts "import { it, expect } from 'vitest';`nit('わざと落とす', () => { expect(1).toBe(2); });"
 node scripts/test.mjs
-Remove-Item test\fail.test.ts
+Remove-Item test\fail.test.ts                                      # 回したときは消す操作が断られたので Move-Item でフォルダーの外へ移した
 npm test
 ```
 
@@ -345,7 +345,7 @@ npm test
 | わざと落とす | `Result: FAIL (2/3)` | 1 |
 | 落とすテストを消した後の `npm test` | `Result: PASS 2/2` | 0 |
 
-件数は見本のプロジェクトのときのものです。自分のリポジトリでは、自分のテストの数になります。入った後のファイルに `.ps1` が 1 本も無いことも見ます（`(Get-ChildItem -Recurse -Filter *.ps1 -File | Where-Object { $_.FullName -notmatch '\\node_modules\\' }).Count` → `0`）。
+回したときは、N6 の `npm pkg set` をこの段の後に打ちました（この段は `node scripts/test.mjs` を直接打つので結果は変わらず、打った後の `npm test` も `Result: PASS 2/2`）。件数は見本のプロジェクトのときのものです。自分のリポジトリでは、自分のテストの数になります。入った後のファイルに `.ps1` が 1 本も無いことも見ます（`(Get-ChildItem -Recurse -Filter *.ps1 -File | Where-Object { $_.FullName -notmatch '\\node_modules\\' }).Count` → `0`）。
 
 ### N8 点検
 

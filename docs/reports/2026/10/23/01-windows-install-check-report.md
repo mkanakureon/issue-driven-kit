@@ -37,6 +37,7 @@ Issue #1 で、導入ガイドの「[Windows で確かめる](../../../../../sha
 | `pwsh --version` | `PowerShell 7.6.7` | 0 |
 | `git --version` | `git version 2.55.0.windows.5` | 0 |
 | `gh --version` | `gh version 2.103.0 (2026-10-21)` | 0 |
+| `gh auth status` | `✓ Logged in to github.com account <アカウント> (keyring)`（を含む） | 0 |
 | `cmd /c ver` | `Microsoft Windows [Version 10.0.26200.9711]` | 0 |
 | `cd <w>; git clone https://github.com/mkanakureon/issue-driven-kit.git issue-driven-kit` | `Cloning into 'issue-driven-kit'...` | 0 |
 
@@ -78,14 +79,15 @@ Issue #1 で、導入ガイドの「[Windows で確かめる](../../../../../sha
 | 6 | `pwsh -NoProfile -File Scripts\issue-run.ps1 -DryRun`（`origin` 無し） | `InvalidOperation: … null 値の式に対してメソッドを呼び出すことはできません。`（128 行目） | 1 |
 | 7 | `git remote add origin https://github.com/mkanakureon/issue-driven-kit.git`（仮の利用先の `origin` として） | （何も出ない） | 0 |
 | 8 | `pwsh -NoProfile -File Scripts/issue-run-doctor.ps1` | `Result: PASS  WARN 2` | 0 |
+| 8b | `git remote get-url origin` | `https://github.com/mkanakureon/issue-driven-kit.git` | 0 |
 | 9 | `pwsh -NoProfile -File Scripts\issue-run.ps1 -DryRun` | `[15:46:30] 対象 1 件: #2` → `#2 合格の条件 11 行・確認コマンド なし` → `→ 合格の条件か確認コマンドが無いので起動しない`（#2 は ```` ```js ```` の Issue） | 0 |
 | 10 | `Unity.exe -batchmode -quit -createProject <w>\kit-win-unity -logFile <w>\create.log` | `Exiting batchmode successfully now!` | 0 |
 | 11 | `Assets/Tests/EditMode/` に asmdef と `SmokeTests.cs`（`Assert.AreEqual(2, 1 + 1)`）を作る | — | — |
 | 12 | `pwsh -NoProfile -File Scripts/unity-test.ps1` | `Result: PASS  EditMode 1/1（失敗 0・飛ばし 0）` | 0 |
-| 13 | `pwsh -NoProfile -File Scripts/unity-test.ps1 -Filter 'NoSuch.Name'` | `Result: FAIL  EditMode 0/0（失敗 0・飛ばし 0）` | 1 |
-| 14 | `FailTests.cs`（`Assert.AreEqual(2, 1)`）を足して `pwsh -NoProfile -File Scripts/unity-test.ps1` | `Result: FAIL  EditMode 1/2（失敗 1・飛ばし 0）` | 1 |
+| 13 | `pwsh -NoProfile -File Scripts/unity-test.ps1 -Filter 'NoSuch.Name'` | `Result: FAIL  EditMode 0/0（失敗 0・飛ばし 0）`（前の行に `EditMode のテストが 0 件（フィルター・テストのアセンブリを確かめる）`） | 1 |
+| 14 | `FailTests.cs`（`Assert.AreEqual(2, 1)`）を足して `pwsh -NoProfile -File Scripts/unity-test.ps1` | `Result: FAIL  EditMode 1/2（失敗 1・飛ばし 0）`（前に `FAIL KitWin.Tests.FailTests.FailsOnPurpose`） | 1 |
 | 15 | `FailTests.cs` を外して `pwsh -NoProfile -File Scripts/unity-test.ps1` | `Result: PASS  EditMode 1/1（失敗 0・飛ばし 0）` | 0 |
-| 16 | `pwsh -NoProfile -File Scripts/issue-run-doctor.ps1` | `Result: PASS  WARN 2`（`OK   Unity: 6000.6.6f1`・`OK   Unity の使用中: この作業場所を開いている Unity は無い` を含む） | 0 |
+| 16 | `pwsh -NoProfile -File Scripts/issue-run-doctor.ps1` | `Result: PASS  WARN 2`（`OK   Unity: 6000.6.6f1（C:\Program Files\Unity\Hub\Editor\6000.6.6f1\Editor\Unity.exe）`・`OK   Unity の使用中: この作業場所を開いている Unity は無い` を含む。WARN は長期トークンと未コミット） | 0 |
 | 17 | `pwsh -NoProfile -File Scripts\issue-run.ps1 -DryRun` | 9 と同じ（`[15:50:09] 対象 1 件: #2`） | 0 |
 
 ## 気づいたこと（直していない）
