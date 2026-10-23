@@ -37,6 +37,45 @@ export function parsePassCriteria(body, langs = CHECK_LANGS.node) {
   return { items, check };
 }
 
+// 1.2 書き込みの権限（GitHub の collaborators/<login>/permission の permission）
+export const WRITE_PERMISSIONS = ['write', 'maintain', 'admin'];
+
+// 1.2 同じ人を 1 回だけ問う。permissionOf(login) は権限の名前を返すか、読めなければ投げる
+export function permissionChecker(permissionOf) {
+  const cache = new Map();
+  return (login) => {
+    const key = String(login ?? '');
+    if (!cache.has(key)) {
+      let r;
+      if (!key) r = { ok: false, why: '作った人が分からない' };
+      else {
+        try {
+          const p = String(permissionOf(key) ?? '');
+          r = WRITE_PERMISSIONS.includes(p) ? { ok: true, why: '' } : { ok: false, why: `作った人 ${key} に書き込みの権限が無い（${p || '権限なし'}）` };
+        } catch (e) { r = { ok: false, why: `作った人 ${key} の権限が読めない（${String(e?.message ?? e).split('\n')[0]}）` }; }
+      }
+      cache.set(key, r);
+    }
+    return cache.get(key);
+  };
+}
+
+// 1 章：対象の Issue を選ぶ。issues は { number, labels, author: { login } }。外したものは理由と一緒に返す
+export function selectTargets(issues, { canWrite, skip = [], max = Infinity }) {
+  const targets = [], excluded = [];
+  for (const t of [...issues].sort((a, b) => a.number - b.number)) {
+    if ((t.labels ?? []).some((l) => skip.includes(l.name))) continue;
+    const w = canWrite(t.author?.login);
+    if (w.ok) targets.push(t); else excluded.push({ number: t.number, reason: w.why });
+  }
+  return { targets: targets.slice(0, max), excluded };
+}
+
+// 2.2：前提の確かめに使うコメント。脚本の名前で始まり、書き込みの権限のある人が書いた最後のもの
+export function lastRunComment(comments, canWrite) {
+  return (comments ?? []).filter((c) => /^issue-run\.(ps1|mjs)/.test(String(c.body ?? '')) && canWrite(c.author?.login).ok).at(-1);
+}
+
 // 2.2 前提：#番号を重複なしで出てきた順
 export function parsePrerequisites(body) {
   const sec = section(normalizeBody(body), '前提');

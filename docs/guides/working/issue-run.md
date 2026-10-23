@@ -43,6 +43,8 @@ GitHub Issue に札を付けておくと、`scripts/issue-run/issue-run.mjs` が
 
 ラベルは最初の実行で自動で作られる。
 
+**拾うのは、作った人に書き込みの権限（write・maintain・admin）がある Issue だけ。** `claude-run` が付いていても、権限の無い人が作った Issue は外し、対象の一覧の行に番号と理由を出す。前提の確かめも、権限のある人が書いた結果のコメントだけを数える（仕様 1.2）。
+
 ## 準備（最初の1回）
 
 1. **Node.js 22.14.0・npm 11.4.2・GitHub CLI（`gh`）を入れる。**
