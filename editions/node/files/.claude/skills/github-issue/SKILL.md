@@ -29,7 +29,7 @@ Issue は「どの文書のどこを、どの合格の条件まで」の札。�
    gh issue create --title "<題>" --body-file .issue-run/drafts/<題>.md --label claude-run
    ```
    ラベル `claude-run` がまだ無いと失敗する。そのときは `gh label create claude-run --color 1d76db --description "Claude に無人で進めさせてよい"` を先に（issue-run.mjs も最初の実行で作る）。
-9. 作った直後の Issue は `gh issue list` に出ないことがある（数十秒待つ）。`node scripts/issue-run/issue-run.mjs --issue <番号> --dry-run` で、合格の条件の行数・確認コマンド「あり」・守るファイルが期待どおりかを見て、URL と一緒に報告する。
+9. 作った直後の Issue は `gh issue list` に出ないことがある（数十秒待つ）。`node scripts/issue-run/issue-run.mjs --issue <番号> --dry-run` で、合格の条件の行数・確認コマンド「あり」・守るファイルが期待どおりかを見て、URL と一緒に報告する。「守るファイル」の行は**切らずに全部読み**、直させるファイルが 1 つも入っていないことを確かめる（ファイルのパスを丸ごと変数に入れても守られる。変数に入れるのはフォルダーまで）。
 
 ## B. Issue を見る（「イッシュを見て」「一覧」）
 

@@ -84,6 +84,18 @@ test('点で始まるフォルダーの頭の点を取らない', () => {
   assert.deepEqual(prot, ['.github/ISSUE_TEMPLATE/claude-run.md']);
 });
 
+test('守るファイル: ファイルのパスを丸ごと変数に入れても守られる', () => {
+  const t = new Set(['docs/guides/working/x-design.md']);
+  const prot = lib.protectedFiles("const d = 'docs/guides/working/x-design.md';   // 書かせる文書は変数で指す", { isFile: () => true, isTracked: (r) => t.has(r) });
+  assert.deepEqual(prot, ['docs/guides/working/x-design.md']);
+});
+
+test('守るファイル: フォルダーを変数に入れて組み立てたファイルは守られない', () => {
+  const t = new Set(['docs/guides/working/x-design.md']);
+  const prot = lib.protectedFiles("const dir = 'docs/guides/working';\nconst d = `${dir}/x-design.md`;", { isFile: (r) => t.has(r), isTracked: (r) => t.has(r) });
+  assert.deepEqual(prot, []);
+});
+
 test('作業場所の POSIX 形', () => {
   assert.equal(lib.repoPosix('D:\\Unreal Projects\\kaedevn\\'), 'd/Unreal Projects/kaedevn');
   assert.equal(lib.repoPosix('/Users/mk/work/app'), 'Users/mk/work/app');

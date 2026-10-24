@@ -136,9 +136,10 @@ done();
 
 - 守れるのは**ファイル単位**。フォルダーを書いても守られない。フォルダーごと変えさせたくないときは、確認コマンドで `gitClean(['migrations/'])` と見る。
 - **直させるファイルは、確認コマンドの中で変数を通して指す**（`const src = 'src';` → `` `${src}/rankings.ts` ``）。パスをそのまま書くと自動で守られ、直せなくなる（「直すべきファイルは変数で指す」とコメントを残す）。**注釈の中に書いたパスも守るファイルになる**（`// 守る:` が効くのと同じ仕組み）。`package.json` を直させる Issue なら、`const pkgFile = ['package', 'json'].join('.');` のように名前を分けて組み立て、注釈にも名前をそのまま書かない（rpg-online-cloudflare #1 の下書きで実際に守られてしまい、`--dry-run` の「守るファイル」で気づいた）。
+- **変数に入れるのはフォルダーまで**にする。`const d = 'docs/…/x-design.md';` のようにファイルのパスを丸ごと代入しても、そのパスは確認コマンドにそのまま書いてあるので守られる（ファイルがまだ無いうちは守られないが、すでにある文書を直す Issue に写すと直せなくなる。Unity 版を使うリポジトリで、説明書を直す Issue が 4 回とも合格できなかった）。
 - **作業で直す必要のあるファイルを「守る」に入れない。** 元のリポジトリでは、旧い名前を消す作業なのに、その名前が残る設計書を守っていて、4 回とも合格できなかった。
 - **テストのファイルを守る**のが要。守らないと、Claude がテストの期待値を実装に合わせて直せてしまう。テストそのものを書かせる Issue では、守らずに「既存のテストを消さない・弱めない」を条件に書き、`requireTests` で名前を見る。
-- どのファイルが守られるかは `--dry-run` の「守るファイル」に出る。
+- どのファイルが守られるかは `--dry-run` の「守るファイル」に出る。作ったら `--dry-run` の「守るファイル」の行を**切らずに全部読み**、直させるファイルが 1 つも入っていないことを確かめる。
 
 ## 5. Issue を書く
 
@@ -220,7 +221,8 @@ docs/03-roadmap.md の「優先的にテストする失敗ケース」
 ```js
 import { readFileSync, existsSync } from 'node:fs';
 import { check, done } from './scripts/issue-run/check-lib.mjs';
-const d = 'docs/guides/working/score-validation-design.md';   // 書かせる文書は変数で指す
+const dir = 'docs/guides/working';   // 書かせる文書はフォルダーを変数に入れて組み立てる
+const d = `${dir}/score-validation-design.md`;
 const t = existsSync(d) ? readFileSync(d, 'utf8') : '';
 check(t.length > 0, '設計書がある');
 for (const h of ['## 0.', 'ゴール', '合格の条件', '確認コマンド', 'テストの名前']) check(t.includes(h), `ある: ${h}`);
