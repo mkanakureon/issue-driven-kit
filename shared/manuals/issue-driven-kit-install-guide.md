@@ -20,7 +20,7 @@ project: issue-driven-kit
 | OS | **Windows 11**（Home 10.0.26200） | Node 版：キットの試験・入れる脚本・テストの入口（見本のプロジェクト）・点検・DryRun。Unity 版：KaedeScapeBuii で Issue 13 件が合格、空のフォルダーに入れて入れる脚本・テストの入口（Unity 6000.6.6f1）・点検・DryRun。手順と出力は版ごとに「[Windows で確かめる（Unity 版）](issue-driven-kit-windows-check.md#windows-で確かめるunity-版)」「[Windows で確かめる（Node 版）](issue-driven-kit-windows-check.md#windows-で確かめるnode-版)」 |
 | OS | **Mac**（macOS 15.8.1 arm64） | Node 版：入れる脚本・テストの入口・点検・DryRun・無人の回で Issue 4 件が 1 回目で合格（Node.js 22.14.0・npm 11.6.2・git 2.39.5・gh 2.103.0・Claude Code 2.1.309） |
 | Node.js | 22.14.0 | `node --version` → `v22.14.0` |
-| npm | 11.6.2 | `npm --version` → `11.6.2` |
+| npm | 11.6.2 | `npm --version` → `11.6.2`（Mac で回した版。Windows の出力は前の決めた版のときのもので、Windows では 11.6.2 で vitest 4 を足せることを確かめた） |
 | Claude Code | 2.1.309 | `claude --version` → `2.1.309 (Claude Code)` |
 | GitHub CLI | 2.103.0 | `gh --version` |
 | git | 2.55.0（Windows） | `git --version` |
