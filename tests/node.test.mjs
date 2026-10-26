@@ -201,7 +201,7 @@ test('無人の回（Node 版）: 前提の確かめは書き込みの権限の�
 });
 
 // ---- 外に触る部品（GitHub と Claude を呼ばない範囲） ----
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 
@@ -450,6 +450,55 @@ test('入れる脚本（Node 版）: 版のファイルにキットのリポジ�
     if (m) assert.match(v.repo, /^[^/]+\/[^/]+$/);
     assert.match(v.commit, /^[0-9a-f]{40}$/);
   } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+// editions/node/ を一時のキットに写して git init・コミットし、そのキット自身に入れる（本物のキットの作業ツリーの汚れに左右されない）
+const gitIn = (dir, ...args) => spawnSync('git', ['-C', dir, '-c', 'user.name=kit-test', '-c', 'user.email=kit-test@example.invalid', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
+function withSelfKit(fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'kit-self-'));
+  try {
+    cpSync(nodeRoot, join(dir, 'editions/node'), { recursive: true });
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'kit').status, 0);
+    const install = (...args) => node([join(dir, 'editions/node/install.mjs'), '--target', dir, ...args]);
+    const version = () => JSON.parse(read(join(dir, '.issue-kit/version')));
+    fn({ dir, install, version });
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+
+test('入れる脚本（Node 版）: キット自身に入れ直しても、写した物で dirty を true にしない', () => {
+  withSelfKit(({ dir, install, version }) => {
+    // 初めて入れる: 写した物は未コミットになるが、写す前のキットはきれい
+    const r = install();
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(version().dirty, false, r.stdout);
+    assert.doesNotMatch(r.stdout, /未コミットの変更あり/);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'install').status, 0);
+    // files/ の直しをコミットしてから入れ直す: 写す物があっても false
+    writeFileSync(join(dir, 'editions/node/files/scripts/test.mjs'), '// changed\n');
+    gitIn(dir, 'add', '-A');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'fix').status, 0);
+    const u = install('--update');
+    assert.equal(u.status, 0, u.stdout + u.stderr);
+    assert.match(u.stdout, /^update +scripts\/test\.mjs$/m);
+    assert.equal(read(join(dir, 'scripts/test.mjs')), '// changed\n');
+    assert.equal(version().dirty, false, u.stdout);
+    const head = gitIn(dir, 'rev-parse', 'HEAD').stdout.trim();
+    assert.equal(version().commit, head);
+  });
+});
+
+test('入れる脚本（Node 版）: キットに未コミットの変更があれば dirty を true にする', () => {
+  withSelfKit(({ dir, install, version }) => {
+    // files/ を直してコミットせずに入れる: commit に写した中身が入っていないので true
+    writeFileSync(join(dir, 'editions/node/files/scripts/test.mjs'), '// changed\n');
+    const r = install();
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(version().dirty, true, r.stdout);
+    assert.match(r.stdout, /未コミットの変更あり/);
+  });
 });
 
 // 点検をキットの版だけ見る形で回す。最新のコミットは環境変数で与える（GitHub を呼ばない）

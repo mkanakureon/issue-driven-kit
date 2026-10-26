@@ -126,7 +126,9 @@ flowchart TB
 | `-Update`／`--update` | 既に入っている版を、キットの今の版に上げる。利用先で手を入れたファイル（`CLAUDE.md` の「プロジェクト」など）は上書きせず、差を出して止まる |
 | （なし） | 初めて入れる。**既にあるファイルは上書きしない**。利用先が手を入れる物（Node 版 `CLAUDE.md`、Unity 版 `CLAUDE.md`・`.gitignore`・`.gitattributes`）がぶつかったら、既にある物は残し、キットの物を `CLAUDE.kit.md` のように `.kit` を付けた名前で横に置いて（拡張子の無い名前・点で始まる名前は後ろに付ける。`.gitignore.kit`）、残りを入れる。横に置いた物は、利用先の物に足してから消す（Claude Code が人と会話で）。それ以外のファイルがぶつかったら、その一覧を出して**何も書かずに**止まる（`Result: FAIL (ぶつかる N 件)`。部分的に入れない） |
 
-どちらも、終わりに `.issue-kit/version`（キットの元のコミット・版・入れた日時。Node 版はキットのリポジトリ `owner/name` も。キットの `origin` から読む）を書き、最後の行に `Result: PASS／FAIL` を出す。入れるのはファイルを写すことだけで、**コミット・push・パッケージの追加はしない**（Node 版の vitest の追加は、導入ガイドの手順 3 で Claude Code が行う）。
+どちらも、終わりに `.issue-kit/version`（キットの元のコミット `commit`・`dirty`・版・入れた日時。Node 版はキットのリポジトリ `owner/name` も。キットの `origin` から読む）を書き、最後の行に `Result: PASS／FAIL` を出す。入れるのはファイルを写すことだけで、**コミット・push・パッケージの追加はしない**（Node 版の vitest の追加は、導入ガイドの手順 3 で Claude Code が行う）。
+
+`commit` と `dirty` は、**写す前**のキットで測る（`git rev-parse HEAD`・`git status --porcelain`）。`dirty: true` は「写す前のキットに未コミットの変更があった（`commit` に写した中身が入っていないかもしれない）」という意味で、写した物（キット自身に入れ直すときの写し）は数えない。`editions/<版>/files/` を直してコミットせずに入れ直すと `dirty: true` になり、それは正しい。`false` にしたいときは、直しをコミットしてから入れ直す。
 
 ---
 

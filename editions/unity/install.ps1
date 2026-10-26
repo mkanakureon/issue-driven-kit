@@ -67,6 +67,10 @@ if ($conflicts.Count) {
 }
 if ($DryRun) { Write-Host "Result: PASS (DryRun・何も書いていない)"; exit 0 }
 
+# キットの版と未コミットの有無は、写す前に測る（キット自身に入れ直すとき、写した物を未コミットとして数えない）
+$commit = (& git -C $KitRoot rev-parse HEAD 2>$null)
+$dirty = [bool](& git -C $KitRoot status --porcelain 2>$null)
+
 foreach ($p in $plan | Where-Object { $_.State -in 'new', 'update' }) {
     New-Item -ItemType Directory -Force -Path (Split-Path $p.To) | Out-Null
     Copy-Item -LiteralPath $p.From -Destination $p.To -Force
@@ -83,8 +87,6 @@ foreach ($d in $EmptyDirs) {
     if (-not (Test-Path -LiteralPath $full)) { New-Item -ItemType Directory -Force -Path $full | Out-Null; Set-Content -LiteralPath (Join-Path $full '.gitkeep') -Value '' -NoNewline }
 }
 
-$commit = (& git -C $KitRoot rev-parse HEAD 2>$null)
-$dirty = [bool](& git -C $KitRoot status --porcelain 2>$null)
 $version = [ordered]@{
     kit         = 'issue-driven-kit'
     edition     = $Edition

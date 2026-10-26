@@ -77,6 +77,10 @@ if (conflicts.length) {
 }
 if (dryRun) { console.log('Result: PASS (DryRun・何も書いていない)'); process.exit(0); }
 
+// キットの版と未コミットの有無は、写す前に測る（キット自身に入れ直すとき、写した物を未コミットとして数えない）
+const c = git(kitRoot, 'rev-parse', 'HEAD');
+const dirty = !!git(kitRoot, 'status', '--porcelain').stdout.trim();
+
 for (const p of plan.filter((x) => x.state === 'new' || x.state === 'update')) {
   mkdirSync(dirname(p.to), { recursive: true });
   copyFileSync(p.from, p.to);
@@ -92,8 +96,6 @@ for (const d of EMPTY_DIRS) {
 }
 if (giMissing.length) writeFileSync(gi, giText + (giText && !giText.endsWith('\n') ? '\n' : '') + '# Issue 駆動キット（無人の回のログ・テストの結果）\n' + giMissing.join('\n') + '\n', 'utf8');
 
-const c = git(kitRoot, 'rev-parse', 'HEAD');
-const dirty = !!git(kitRoot, 'status', '--porcelain').stdout.trim();
 // キットのリポジトリ（owner/name。キットの origin から）。点検（doctor.mjs）がその既定のブランチの最新と比べる。GitHub でなければ空
 const om = /github\.com[:/]([^/]+)\/(.+?)(?:\.git)?\/?$/.exec(git(kitRoot, 'remote', 'get-url', 'origin').stdout?.trim() ?? '');
 const repo = om ? `${om[1]}/${om[2]}` : '';
