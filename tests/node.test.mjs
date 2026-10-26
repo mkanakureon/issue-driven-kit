@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gitIn } from './helpers.mjs';
 
 const kit = join(dirname(fileURLToPath(import.meta.url)), '..');
 const nodeRoot = join(kit, 'editions/node');
@@ -508,7 +509,6 @@ test('入れる脚本（Node 版）: 版のファイルにキットのリポジ�
 });
 
 // editions/node/ を一時のキットに写して git init・コミットし、そのキット自身に入れる（本物のキットの作業ツリーの汚れに左右されない）
-const gitIn = (dir, ...args) => spawnSync('git', ['-C', dir, '-c', 'user.name=kit-test', '-c', 'user.email=kit-test@example.invalid', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
 function withSelfKit(fn) {
   const dir = mkdtempSync(join(tmpdir(), 'kit-self-'));
   try {

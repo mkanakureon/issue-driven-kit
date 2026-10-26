@@ -12,17 +12,13 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
+import { gitIn, pwshCrashed, runWithRetry } from './helpers.mjs';
 
 const kit = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(kit, p), 'utf8').replace(/^﻿/, '').replace(/\r/g, '');
 const hasPwsh = process.platform === 'win32' && spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0']).status === 0;
-// pwsh そのものが落ちた（試験を並べて回すと、まれに「Fatal error. Internal CLR error.」・0xC0000005 で落ちる）ときだけ、2 回までやり直す。脚本の結果は見ない
-const pwshCrashed = (r) => r.status === 0xC0000005 || /Internal CLR error/.test(`${r.stdout ?? ''}${r.stderr ?? ''}`);
-function pwsh(args, opts) {
-  let r = spawnSync('pwsh', args, opts);
-  for (let i = 0; i < 2 && pwshCrashed(r); i++) r = spawnSync('pwsh', args, opts);
-  return r;
-}
+// pwsh そのものが落ちたときだけ、2 回までやり直す（やり直すたびに 1 行残す。tests/helpers.mjs）
+const pwsh = (args, opts) => runWithRetry(() => spawnSync('pwsh', args, opts));
 
 const unityFiles = [
   'CLAUDE.md',
@@ -123,6 +119,46 @@ test('K-4 Unity 版を入れると参照と同じ物ができる', { skip: (!has
   }
 });
 
+test('試験の手伝い: pwsh が落ちたときだけ 2 回までやり直し、やり直すたびに 1 行残す', () => {
+  // 偽の run: 渡した結果を順に返す（pwsh は回さない）
+  const fake = (...results) => { let i = 0; const run = () => results[Math.min(i++, results.length - 1)]; run.calls = () => i; return run; };
+  const ok = { status: 0, stdout: 'Result: PASS', stderr: '' };
+  const fail = { status: 1, stdout: 'Result: FAIL', stderr: '' };
+  const clr = { status: 0xC0000005, stdout: '', stderr: '' };
+  const clrText = { status: 1, stdout: '', stderr: 'Fatal error. Internal CLR error.' };
+  const retry = (run) => { const lines = []; const r = runWithRetry(run, { crashed: pwshCrashed, tries: 2, log: (l) => lines.push(l) }); return { r, lines }; };
+  // 落ちなければ 1 回だけ・何も残さない（脚本の FAIL ではやり直さない）
+  for (const res of [ok, fail]) {
+    const run = fake(res);
+    const { r, lines } = retry(run);
+    assert.equal(r, res);
+    assert.equal(run.calls(), 1);
+    assert.deepEqual(lines, []);
+  }
+  // 1 回落ちてから通る: 1 行残して 2 回目の結果を返す
+  let run = fake(clr, ok);
+  let { r, lines } = retry(run);
+  assert.equal(r, ok);
+  assert.equal(run.calls(), 2);
+  assert.deepEqual(lines, ['pwsh が落ちたのでやり直す（1 回目・終了コード 3221225477）']);
+  // 落ち続ける: 2 回までやり直し（計 3 回）、2 行残して最後の結果を返す
+  run = fake(clrText, clr, clr, ok);
+  ({ r, lines } = retry(run));
+  assert.equal(r, clr);
+  assert.equal(run.calls(), 3);
+  assert.equal(lines.length, 2);
+  assert.match(lines[0], /^pwsh が落ちたのでやり直す（1 回目・終了コード 1）$/);
+  assert.match(lines[1], /^pwsh が落ちたのでやり直す（2 回目・終了コード 3221225477）$/);
+  // 既定は pwshCrashed・2 回まで・console.error
+  const errors = [];
+  const orig = console.error;
+  console.error = (l) => errors.push(l);
+  try { run = fake(clr, clr, clr, ok); r = runWithRetry(run); } finally { console.error = orig; }
+  assert.equal(r, clr);
+  assert.equal(run.calls(), 3);
+  assert.equal(errors.length, 2);
+});
+
 test('入れる脚本（Unity 版）: 既にある CLAUDE.md・.gitignore は残し、横に .kit を置いて残りを入れる', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'kit-unity-aside-'));
   const inst = (...args) => pwsh(['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
@@ -143,6 +179,8 @@ test('入れる脚本（Unity 版）: 既にある CLAUDE.md・.gitignore は残
     const r = inst();
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /Result: PASS \(\d+ 件を写した・横に置いた 2 件/);
+    assert.match(r.stdout, /CLAUDE\.kit\.md（CLAUDE\.md に足す）/);
+    assert.match(r.stdout, /\.gitignore\.kit（\.gitignore に足す）/);
     assert.equal(readFileSync(join(dir, 'CLAUDE.md'), 'utf8'), '# mine\n');
     assert.equal(readFileSync(join(dir, '.gitignore'), 'utf8'), 'Library/\n');
     assert.deepEqual(readFileSync(join(dir, 'CLAUDE.kit.md')), readFileSync(join(files, 'CLAUDE.md')));
@@ -203,30 +241,29 @@ test('入れる脚本（Unity 版）: -Update は利用先が手を入れる物�
 test('入れる脚本（Unity 版）: キット自身に入れ直しても、写した物で dirty を true にしない', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
   // editions/unity/ を一時のキットに写して git init・コミットし、そのキット自身に入れる（本物のキットの作業ツリーの汚れに左右されない）
   const dir = mkdtempSync(join(tmpdir(), 'kit-unity-self-'));
-  const gitIn = (...args) => spawnSync('git', ['-C', dir, '-c', 'user.name=kit-test', '-c', 'user.email=kit-test@example.invalid', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
   const inst = (...args) => pwsh(['-NoProfile', '-File', join(dir, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
   const version = () => JSON.parse(readFileSync(join(dir, '.issue-kit/version'), 'utf8').replace(/^﻿/, ''));
   try {
     cpSync(join(kit, 'editions/unity'), join(dir, 'editions/unity'), { recursive: true });
     assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
-    gitIn('add', '-A', '-f');
-    assert.equal(gitIn('commit', '-q', '-m', 'kit').status, 0);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'kit').status, 0);
     // 初めて入れる: 写した物は未コミットになるが、写す前のキットはきれい
     const r = inst();
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.equal(version().dirty, false, r.stdout);
     assert.doesNotMatch(r.stdout, /未コミットの変更あり/);
-    gitIn('add', '-A', '-f');
-    assert.equal(gitIn('commit', '-q', '-m', 'install').status, 0);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'install').status, 0);
     // files/ の直しをコミットしてから入れ直す: 写す物があっても false
     writeFileSync(join(dir, 'editions/unity/files/Scripts/unity-test.ps1'), '# changed\n');
-    gitIn('add', '-A');
-    assert.equal(gitIn('commit', '-q', '-m', 'fix').status, 0);
+    gitIn(dir, 'add', '-A');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'fix').status, 0);
     const u = inst('-Update');
     assert.equal(u.status, 0, u.stdout + u.stderr);
     assert.match(u.stdout, /^update +Scripts\/unity-test\.ps1$/m);
     assert.equal(version().dirty, false, u.stdout);
-    assert.equal(version().commit, gitIn('rev-parse', 'HEAD').stdout.trim());
+    assert.equal(version().commit, gitIn(dir, 'rev-parse', 'HEAD').stdout.trim());
     // files/ を直してコミットせずに入れ直す: commit に写した中身が入っていないので true
     writeFileSync(join(dir, 'editions/unity/files/Scripts/unity-test.ps1'), '# changed again\n');
     const d = inst('-Update');
@@ -240,32 +277,31 @@ test('入れる脚本（Unity 版）: キット自身に入れ直しても、写
 test('入れる脚本（Unity 版）: キットの .issue-kit/version だけに差があっても dirty を true にしない', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
   // 上の試験と同じく、editions/unity/ を一時のキットに写して git init・コミットし、そのキット自身に入れる
   const dir = mkdtempSync(join(tmpdir(), 'kit-unity-ver-'));
-  const gitIn = (...args) => spawnSync('git', ['-C', dir, '-c', 'user.name=kit-test', '-c', 'user.email=kit-test@example.invalid', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
   const inst = (...args) => pwsh(['-NoProfile', '-File', join(dir, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
   const version = () => JSON.parse(readFileSync(join(dir, '.issue-kit/version'), 'utf8').replace(/^﻿/, ''));
   try {
     cpSync(join(kit, 'editions/unity'), join(dir, 'editions/unity'), { recursive: true });
     assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
-    gitIn('add', '-A', '-f');
-    assert.equal(gitIn('commit', '-q', '-m', 'kit').status, 0);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'kit').status, 0);
     // 入れて、版のファイル（.issue-kit/version）を含めてコミットする
     assert.equal(inst().status, 0);
-    gitIn('add', '-A', '-f');
-    assert.equal(gitIn('commit', '-q', '-m', 'install').status, 0);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'install').status, 0);
     // files/ の直しをコミットして入れ直す: 版のファイルが書き換わり、その差だけが残る
     writeFileSync(join(dir, 'editions/unity/files/Scripts/unity-test.ps1'), '# changed\n');
-    gitIn('add', '-A');
-    assert.equal(gitIn('commit', '-q', '-m', 'fix').status, 0);
+    gitIn(dir, 'add', '-A');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'fix').status, 0);
     assert.equal(inst('-Update').status, 0);
-    gitIn('add', '-A', '-f', '--', '.', ':(exclude).issue-kit/version');
-    assert.equal(gitIn('commit', '-q', '-m', 'reinstall').status, 0);
-    assert.equal(gitIn('status', '--porcelain').stdout.trim(), 'M .issue-kit/version');
+    gitIn(dir, 'add', '-A', '-f', '--', '.', ':(exclude).issue-kit/version');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'reinstall').status, 0);
+    assert.equal(gitIn(dir, 'status', '--porcelain').stdout.trim(), 'M .issue-kit/version');
     // もう一度入れ直す: 版のファイルの差だけなので false
     const u = inst('-Update');
     assert.equal(u.status, 0, u.stdout + u.stderr);
     assert.equal(version().dirty, false, u.stdout);
     assert.doesNotMatch(u.stdout, /未コミットの変更あり/);
-    assert.equal(version().commit, gitIn('rev-parse', 'HEAD').stdout.trim());
+    assert.equal(version().commit, gitIn(dir, 'rev-parse', 'HEAD').stdout.trim());
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
