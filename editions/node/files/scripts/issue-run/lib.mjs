@@ -103,6 +103,29 @@ export function protectedFiles(code, { root = '.', trackedList = [], isFile, isT
   return found;
 }
 
+// 8 章 DryRun：実行用の設定の deny の Edit(…)・Write(…) から、作業場所の下のパス（CLAUDE.md・.claude/** など）を読む
+export function denyEditPaths(settingsText) {
+  const deny = JSON.parse(settingsText)?.permissions?.deny ?? [];
+  const found = [];
+  for (const rule of deny) {
+    const m = /^(?:Edit|Write)\(\/\/\{\{REPO\}\}\/(.+)\)$/.exec(String(rule));
+    if (m && !found.includes(m[1])) found.push(m[1]);
+  }
+  return found;
+}
+
+// 8 章 DryRun：合格の条件の中で、作業場所の直下から見て deny のパスに当たる語（`**` はその下全部。頭にフォルダーが付いた語は当たらない）
+export function deniedMentions(text, paths) {
+  const hits = [];
+  for (const raw of String(text).split(/[\s`'"・、。,;|&(){}=[\]「」『』（）]+/u)) {
+    const word = raw.replaceAll('\\', '/').replace(/^(\.\/)+/, '');
+    if (!word) continue;
+    const hit = paths.some((p) => p.endsWith('/**') ? word.startsWith(p.slice(0, -2)) : word === p);
+    if (hit && !hits.includes(word)) hits.push(word);
+  }
+  return hits;
+}
+
 export function sha256File(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex').toUpperCase();
 }

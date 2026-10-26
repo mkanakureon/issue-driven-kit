@@ -101,6 +101,33 @@ test('作業場所の POSIX 形', () => {
   assert.equal(lib.repoPosix('/Users/mk/work/app'), 'Users/mk/work/app');
 });
 
+const denyPaths = () => lib.denyEditPaths(read(join(nodeRoot, 'files/.claude/issue-run/settings.json')));
+
+test('実行用の設定（Node 版）: deny の Edit のパスを読む', () => {
+  assert.deepEqual(denyPaths(), ['CLAUDE.md', '.claude/**', 'docs/inspecs/**']);
+  // Bash(…) や作業場所の外の Edit は読まない
+  assert.deepEqual(lib.denyEditPaths(JSON.stringify({ permissions: { deny: ['Bash(rm:*)', 'Edit(src/a.ts)', 'Write(//{{REPO}}/x/**)'] } })), ['x/**']);
+});
+
+test('DryRun（Node 版）: 合格の条件に deny のパスがあれば知らせる', () => {
+  const paths = denyPaths();
+  assert.deepEqual(lib.deniedMentions('- 直下の `CLAUDE.md` から 11.4.2 を消す', paths), ['CLAUDE.md']);
+  assert.deepEqual(lib.deniedMentions('- `docs/inspecs/2026/10/a.md` を読む・`./.claude/skills/x/SKILL.md` を直す', paths), ['docs/inspecs/2026/10/a.md', '.claude/skills/x/SKILL.md']);
+  assert.deepEqual(lib.deniedMentions("gitClean(['.claude/', 'src/']);", paths), ['.claude/']);
+  assert.deepEqual(lib.deniedMentions('- `src/a.ts` を直す', paths), []);
+  // 脚本: DryRun が設定から deny のパスを読んで知らせる（Claude は起動しない・終了コード 0 のまま）
+  const runner = read(join(nodeRoot, 'files/scripts/issue-run/issue-run.mjs'));
+  const dry = runner.slice(runner.indexOf('if (DRY_RUN) {'), runner.indexOf('process.exit(0);', runner.indexOf('if (DRY_RUN) {')));
+  assert.match(dry, /L\.deniedMentions\(.*L\.denyEditPaths\(L\.readText\(SETTINGS_TEMPLATE\)\)\)/);
+  assert.match(dry, /deny のパス/);
+});
+
+test('DryRun（Node 版）: 写しの元（editions/node/files/ の下）のパスは知らせない', () => {
+  const paths = denyPaths();
+  assert.deepEqual(lib.deniedMentions('- `CLAUDE.md`・`editions/node/files/CLAUDE.md` に 11.6.2 がある', paths), ['CLAUDE.md']);
+  assert.deepEqual(lib.deniedMentions('- `editions/node/files/.claude/skills/x/SKILL.md` と `editions/node/files/docs/inspecs/README.md` を直す', paths), []);
+});
+
 test('開始〜終了の書き方と 1 行目の形', () => {
   assert.equal(lib.formatSpan(new Date(2026, 9, 22, 9, 36), new Date(2026, 9, 22, 9, 42)), '2026-10-22 09:36〜09:42');
   assert.equal(lib.formatSpan(new Date(2026, 9, 22, 23, 50), new Date(2026, 9, 23, 0, 40)), '2026-10-22 23:50〜2026-10-23 00:40');

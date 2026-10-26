@@ -230,6 +230,8 @@ if (DRY_RUN) {
     console.log(`#${t.number} 合格の条件 ${c.items.length} 行・確認コマンド ${c.check ? 'あり' : 'なし'}`);
     if (!c.items.length || !c.check) { console.log('  → 合格の条件か確認コマンドが無いので起動しない'); continue; }
     console.log(`  守るファイル: ${protectedOf(c.check).join(', ')}`);
+    const denied = L.deniedMentions(`${c.items.join('\n')}\n${c.check}`, L.denyEditPaths(L.readText(SETTINGS_TEMPLATE)));
+    if (denied.length) console.log(`  deny のパス: ${denied.join(', ')}（無人の回では直せない。直す必要があれば人が直す。変えないことを確かめるだけなら無視してよい）`);
     const pre = L.parsePrerequisites(t.body);
     if (pre.length) console.log(`  前提: ${pre.map((n) => `#${n}`).join(' ')}（いま済んでいないもの: ${unmetPrerequisites(pre).join(' ')}）`);
   }
