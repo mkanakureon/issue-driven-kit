@@ -357,7 +357,7 @@ pwsh Scripts\issue-run.ps1
 <キット> を git pull して、このリポジトリのキットを --update で新しくして。手を入れたファイルとの差を先に見せて
 ```
 
-`.issue-kit/version` に、いま入っているキットの元のコミットとキットのリポジトリ（Node 版）が書いてあります。`dirty` が `true` のときは、入れたときのキットに未コミットの変更があり、写した中身が `commit` のコミットに入っていないかもしれません（入れる前のキットで測ります）。点検は、キットの最新より古ければ `WARN キットの版: 古い。…` で知らせます。
+`.issue-kit/version` に、いま入っているキットの元のコミットとキットのリポジトリ（Node 版）が書いてあります。`dirty` が `true` のときは、入れたときのキットに未コミットの変更があり、写した中身が `commit` のコミットに入っていないかもしれません（入れる前のキットで測ります。キットの `.issue-kit/version` の差は、入れる脚本が書くファイルなので数えないことにしています）。点検は、キットの最新より古ければ `WARN キットの版: 古い。…` で知らせます。
 
 ---
 
@@ -506,7 +506,7 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 │  ├─ skills/                         github-issue・design-cycle・commit・push・pr・save-report・document-authoring・lane-sync・file-header（どれも SKILL.md）
 │  └─ issue-run/                      prompt.md・settings.json・stop-hook.mjs
 ├─ .github/ISSUE_TEMPLATE/claude-run.md
-├─ .issue-kit/version                 キットのリポジトリ・元のコミット・dirty（入れる前のキットに未コミットの変更があったか）・版・入れた日時・写したファイルの一覧
+├─ .issue-kit/version                 キットのリポジトリ・元のコミット・dirty（入れる前のキットに未コミットの変更があったか。キットの .issue-kit/version の差は数えない）・版・入れた日時・写したファイルの一覧
 ├─ scripts/
 │  ├─ test.mjs                        テストの入口（vitest か node --test を回し、最後の行が Result:）
 │  └─ issue-run/

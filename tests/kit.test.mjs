@@ -236,3 +236,37 @@ test('入れる脚本（Unity 版）: キット自身に入れ直しても、写
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('入れる脚本（Unity 版）: キットの .issue-kit/version だけに差があっても dirty を true にしない', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
+  // 上の試験と同じく、editions/unity/ を一時のキットに写して git init・コミットし、そのキット自身に入れる
+  const dir = mkdtempSync(join(tmpdir(), 'kit-unity-ver-'));
+  const gitIn = (...args) => spawnSync('git', ['-C', dir, '-c', 'user.name=kit-test', '-c', 'user.email=kit-test@example.invalid', '-c', 'core.autocrlf=false', ...args], { encoding: 'utf8' });
+  const inst = (...args) => pwsh(['-NoProfile', '-File', join(dir, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
+  const version = () => JSON.parse(readFileSync(join(dir, '.issue-kit/version'), 'utf8').replace(/^﻿/, ''));
+  try {
+    cpSync(join(kit, 'editions/unity'), join(dir, 'editions/unity'), { recursive: true });
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    gitIn('add', '-A', '-f');
+    assert.equal(gitIn('commit', '-q', '-m', 'kit').status, 0);
+    // 入れて、版のファイル（.issue-kit/version）を含めてコミットする
+    assert.equal(inst().status, 0);
+    gitIn('add', '-A', '-f');
+    assert.equal(gitIn('commit', '-q', '-m', 'install').status, 0);
+    // files/ の直しをコミットして入れ直す: 版のファイルが書き換わり、その差だけが残る
+    writeFileSync(join(dir, 'editions/unity/files/Scripts/unity-test.ps1'), '# changed\n');
+    gitIn('add', '-A');
+    assert.equal(gitIn('commit', '-q', '-m', 'fix').status, 0);
+    assert.equal(inst('-Update').status, 0);
+    gitIn('add', '-A', '-f', '--', '.', ':(exclude).issue-kit/version');
+    assert.equal(gitIn('commit', '-q', '-m', 'reinstall').status, 0);
+    assert.equal(gitIn('status', '--porcelain').stdout.trim(), 'M .issue-kit/version');
+    // もう一度入れ直す: 版のファイルの差だけなので false
+    const u = inst('-Update');
+    assert.equal(u.status, 0, u.stdout + u.stderr);
+    assert.equal(version().dirty, false, u.stdout);
+    assert.doesNotMatch(u.stdout, /未コミットの変更あり/);
+    assert.equal(version().commit, gitIn('rev-parse', 'HEAD').stdout.trim());
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});

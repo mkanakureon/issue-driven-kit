@@ -128,7 +128,7 @@ flowchart TB
 
 どちらも、終わりに `.issue-kit/version`（キットの元のコミット `commit`・`dirty`・版・入れた日時。Node 版はキットのリポジトリ `owner/name` も。キットの `origin` から読む）を書き、最後の行に `Result: PASS／FAIL` を出す。入れるのはファイルを写すことだけで、**コミット・push・パッケージの追加はしない**（Node 版の vitest の追加は、導入ガイドの手順 4 で Claude Code が行う）。
 
-`commit` と `dirty` は、**写す前**のキットで測る（`git rev-parse HEAD`・`git status --porcelain`）。`dirty: true` は「写す前のキットに未コミットの変更があった（`commit` に写した中身が入っていないかもしれない）」という意味で、写した物（キット自身に入れ直すときの写し）は数えない。`editions/<版>/files/` を直してコミットせずに入れ直すと `dirty: true` になり、それは正しい。`false` にしたいときは、直しをコミットしてから入れ直す。
+`commit` と `dirty` は、**写す前**のキットで測る（`git rev-parse HEAD`・`git status --porcelain`）。`dirty: true` は「写す前のキットに未コミットの変更があった（`commit` に写した中身が入っていないかもしれない）」という意味で、写した物（キット自身に入れ直すときの写し）は数えない。キットの `.issue-kit/version` の差も数えない（入れる脚本が書くファイルで、写す中身ではない。`git status --porcelain -- . ':(exclude).issue-kit/version'` のように、git のパスの指定で外す。直下の写しの差はいまどおり数える）。`editions/<版>/files/` を直してコミットせずに入れ直すと `dirty: true` になり、それは正しい。`false` にしたいときは、直しをコミットしてから入れ直す。
 
 ---
 

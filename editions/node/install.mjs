@@ -78,8 +78,9 @@ if (conflicts.length) {
 if (dryRun) { console.log('Result: PASS (DryRun・何も書いていない)'); process.exit(0); }
 
 // キットの版と未コミットの有無は、写す前に測る（キット自身に入れ直すとき、写した物を未コミットとして数えない）
+// キットの .issue-kit/version は入れる脚本が書くファイルで写す中身ではないので、差を数えない
 const c = git(kitRoot, 'rev-parse', 'HEAD');
-const dirty = !!git(kitRoot, 'status', '--porcelain').stdout.trim();
+const dirty = !!git(kitRoot, 'status', '--porcelain', '--', '.', ':(exclude).issue-kit/version').stdout.trim();
 
 for (const p of plan.filter((x) => x.state === 'new' || x.state === 'update')) {
   mkdirSync(dirname(p.to), { recursive: true });

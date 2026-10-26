@@ -545,6 +545,29 @@ test('入れる脚本（Node 版）: キット自身に入れ直しても、写�
   });
 });
 
+test('入れる脚本（Node 版）: キットの .issue-kit/version だけに差があっても dirty を true にしない', () => {
+  withSelfKit(({ dir, install, version }) => {
+    // 入れて、版のファイル（.issue-kit/version）を含めてコミットする
+    assert.equal(install().status, 0);
+    gitIn(dir, 'add', '-A', '-f');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'install').status, 0);
+    // files/ の直しをコミットして入れ直す: 版のファイルが書き換わり、その差だけが残る
+    writeFileSync(join(dir, 'editions/node/files/scripts/test.mjs'), '// changed\n');
+    gitIn(dir, 'add', '-A');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'fix').status, 0);
+    assert.equal(install('--update').status, 0);
+    gitIn(dir, 'add', '-A', '-f', '--', '.', ':(exclude).issue-kit/version');
+    assert.equal(gitIn(dir, 'commit', '-q', '-m', 'reinstall').status, 0);
+    assert.equal(gitIn(dir, 'status', '--porcelain').stdout.trim(), 'M .issue-kit/version');
+    // もう一度入れ直す: 版のファイルの差だけなので false
+    const u = install('--update');
+    assert.equal(u.status, 0, u.stdout + u.stderr);
+    assert.equal(version().dirty, false, u.stdout);
+    assert.doesNotMatch(u.stdout, /未コミットの変更あり/);
+    assert.equal(version().commit, gitIn(dir, 'rev-parse', 'HEAD').stdout.trim());
+  });
+});
+
 test('入れる脚本（Node 版）: キットに未コミットの変更があれば dirty を true にする', () => {
   withSelfKit(({ dir, install, version }) => {
     // files/ を直してコミットせずに入れる: commit に写した中身が入っていないので true
