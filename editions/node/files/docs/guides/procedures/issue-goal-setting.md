@@ -216,7 +216,7 @@ docs/03-roadmap.md の「優先的にテストする失敗ケース」
 ## 合格の条件
 - 設計書が docs/guides/working/score-validation-design.md にある
 - §0 にゴール・合格の条件の表・実装の Issue に使う確認コマンドの案がある
-- テストの名前の一覧の表があり、見出しの行が `| 束 | テストの名前 | 何を確かめるか |` で始まる（束は「束」の列に書き、名前の文に混ぜない）
+- テストの名前の一覧の表があり、見出しの行が `| 束 | テストの名前 | 何を確かめるか |` で始まる（束は「束」の列に書き、名前の文に混ぜない。名前はバッククォートで囲む）
 
 ```js
 import { readFileSync, existsSync } from 'node:fs';
@@ -226,7 +226,7 @@ const d = `${dir}/score-validation-design.md`;
 const t = existsSync(d) ? readFileSync(d, 'utf8') : '';
 check(t.length > 0, '設計書がある');
 for (const h of ['## 0.', 'ゴール', '合格の条件', '確認コマンド', 'テストの名前']) check(t.includes(h), `ある: ${h}`);
-check(/^\| *束 *\| *テストの名前 *\|/m.test(t), 'テストの名前の表に「束」の列がある');
+check(/^\| *束 *\| *テストの名前 *\| *何を確かめるか *\|/m.test(t), 'テストの名前の表に「束」の列がある');
 done();
 ```
 
@@ -234,7 +234,7 @@ done();
 - 実装（2回目の Issue でやる）
 ````
 
-設計書のテストの名前の表は、この形にさせる（束は「束」の列に 1 つだけ書く。名前はバッククォートで囲む）。
+設計書のテストの名前の表は、この形にさせる（束は「束」の列に 1 つだけ書く。名前はバッククォートで囲む）。下は表の頭の数行。
 
 | 束 | テストの名前 | 何を確かめるか |
 |---|---|---|
@@ -268,7 +268,7 @@ import { runTests, requireTests, check, done } from './scripts/issue-run/check-l
 const t = readFileSync('docs/guides/working/score-validation-design.md', 'utf8');
 const rows = [...t.matchAll(/^\| *([^|`]+?) *\| *`([^`]+)` *\|/gm)];
 const names = rows.filter((m) => m[1] === 'K2').map((m) => m[2]);
-// 本数は Issue を書く人が表を数えて書く（requireTests は渡された名前しか見ないので、読めなかった名前は確かめられない）
+// 本数は Issue を書く人が設計書の表を数えて書く（12 は設計書の束 K2 の行の数。requireTests は渡された名前しか見ないので、読めなかった名前は確かめられない）
 check(names.length === 12, '表から読めた束 K2 の名前が 12 本');
 runTests();
 requireTests(names);
