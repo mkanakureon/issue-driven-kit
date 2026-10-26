@@ -162,7 +162,7 @@ GitHub の「New issue」でひな形「Claude に無人で進めさせる」を
 
 - 後の段の確認コマンドが「前の段と同じ結果か」を比べるなら、前の段に比べるための記録を機械で読める形（JSON）で残させる。
 - 前の段の Issue の最後に「## 次の段」を書いておくと、後で読むとき流れが分かる（スクリプトは読まない。kaedevn では 22 件が使った）。
-- 設計書を書く Issue の合格の条件に「実装を分けた束（K1・K2…）の一覧と、束ごとの確認コマンドの案」を入れておくと、2 回目以降の Issue がその束を 1 つずつ指せる（kaedevn #20 → #25〜#27「#20 の束 K2」）。
+- 設計書を書く Issue の合格の条件に「実装を分けた束（K1・K2…）の一覧と、束ごとの確認コマンドの案」を入れておくと、2 回目以降の Issue がその束を 1 つずつ指せる（kaedevn #20 → #25〜#27「#20 の束 K2」）。テストの名前の表では、束は印の文（「（K2）」など）に混ぜず**「束」の列**に書かせる（見本は 6.2。列の値で絞れば、印の書き方の揺れを確認コマンドで吸わずに済む。公開のキットで `（K2）` と `（束 K2）` が揺れた）。
 - 人が手でやるもの（本番への配備・別の PC での確認など）も Issue にしてよいが、`claude-run` を付けない（kaedevn #17・#44）。
 
 ## 6. 例
@@ -210,15 +210,18 @@ Assets/InputSystem_Actions.inputactions（Player の Move・Jump・Sprint）
 ## 合格の条件
 - 設計書が Docs/Guides/Working/player-movement-design.md にある
 - §0 にゴール・合格の条件の表・実装の Issue に使う確認コマンドの案がある
-- テストの名前（名前空間.クラス.メソッド）の一覧がある
+- テストの名前（`KaedeScapeBuii.Tests.<EditMode|PlayMode>.<クラス>.<メソッド>`）の一覧の表があり、見出しの行が `| 束 | テストの名前 | 何を確かめるか |` で始まる（束は「束」の列に書き、名前の文に混ぜない。名前はバッククォートで囲む）
 
 ```pwsh
-$d = 'Docs/Guides/Working/player-movement-design.md'
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$dir = 'Docs/Guides/Working'   # 書かせる文書はフォルダーを変数に入れて組み立てる
+$d = Join-Path $dir 'player-movement-design.md'
 if (-not (Test-Path $d)) { Write-Host '設計書が無い'; exit 1 }
-$t = Get-Content $d -Raw
+$t = Get-Content $d -Raw -Encoding utf8
 foreach ($h in '## 0.', 'ゴール', '合格の条件', '確認コマンド', 'KaedeScapeBuii.Tests.') {
     if ($t -notmatch [regex]::Escape($h)) { Write-Host "無い: $h"; exit 1 }
 }
+if ($t -notmatch '(?m)^\| *束 *\| *テストの名前 *\| *何を確かめるか *\|') { Write-Host 'テストの名前の表に「束」の列が無い'; exit 1 }
 exit 0
 ```
 
@@ -226,36 +229,59 @@ exit 0
 - 実装（2回目の Issue でやる）
 ````
 
+設計書のテストの名前の表は、この形にさせる（束は「束」の列に 1 つだけ書く。名前はバッククォートで囲む）。下は表の頭の数行。
+
+| 束 | テストの名前 | 何を確かめるか |
+|---|---|---|
+| K1 | `KaedeScapeBuii.Tests.EditMode.PlayerMotorTests.WalkSpeedMatchesTable` | 歩く速さ |
+| K1 | `KaedeScapeBuii.Tests.EditMode.PlayerMotorTests.SprintIsFasterThanWalk` | 走る速さ |
+| K2 | `KaedeScapeBuii.Tests.EditMode.PlayerMotorTests.JumpIgnoredInAir` | 空中で跳ばない |
+
 ### 6.3 大きい・2回目 — 実装する
 
 ````
-タイトル: プレイヤーの移動を実装する（設計書 §1〜§3）
+タイトル: プレイヤーの移動を実装する（設計書の束 K2）
 
 ## 前提
 - #1
 
 ## やること
-設計書どおりに移動を実装し、設計書の合格の条件のうち機械で測れるものを全部満たす。
+設計書の束 K2 を設計書どおりに実装し、束 K2 の合格の条件のうち機械で測れるものを全部満たす。
 
 ## 元の文書
-Docs/Guides/Working/player-movement-design.md の §1〜§3
+Docs/Guides/Working/player-movement-design.md の束 K2
 
 ## 合格の条件
-- 設計書 §0 のテストが全部ある・通る
+- 設計書のテストの名前の表で「束」の列が K2 の行のテスト（12 本）が全部ある・通る
 - 既存のテストが全部通る
 
 ```pwsh
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # 守る: Docs/Guides/Working/player-movement-design.md
-pwsh -NoProfile -File Scripts/unity-test.ps1 -Filter 'KaedeScapeBuii.Tests.PlayerMotorTests'
-if ($LASTEXITCODE) { exit 1 }
+# テストの名前は設計書の表から読む（Issue に写さない。表が正）。「束」の列の値で行を絞る
+$t = Get-Content 'Docs/Guides/Working/player-movement-design.md' -Raw -Encoding utf8
+$rows = [regex]::Matches($t, '(?m)^\| *([^|`]+?) *\| *`(KaedeScapeBuii\.Tests\.(?:EditMode|PlayMode)\.\w+\.\w+)` *\|')
+$names = @($rows | Where-Object { $_.Groups[1].Value -eq 'K2' } | ForEach-Object { $_.Groups[2].Value })
+# 本数は Issue を書く人が設計書の表を数えて書く（12 は束 K2 の行の数。> 0 にしない。読めなかった名前は下で確かめられない）
+if ($names.Count -ne 12) { Write-Host "表から読めた束 K2 の名前が $($names.Count) 本（12 本のはず）"; exit 1 }
 pwsh -NoProfile -File Scripts/unity-test.ps1
-if ($LASTEXITCODE) { exit 1 }
+if ($LASTEXITCODE) { Write-Host 'テストが通らない'; exit 1 }
+# 名前ごとに結果の XML で Passed を見る（名前が違って 0 本になっても PASS にしない）
+$x = Get-ChildItem Logs/UnityTest -Directory | Sort-Object Name | Select-Object -Last 1
+$xml = [xml](Get-Content (Join-Path $x.FullName 'EditMode-results.xml') -Raw -Encoding utf8)
+foreach ($n in $names) {
+    $hit = @($xml.SelectNodes("//test-case[@fullname='$n' or starts-with(@fullname,'$n(')]"))
+    if (-not $hit.Count) { Write-Host "テストが無い: $n"; exit 1 }
+    if (@($hit | Where-Object { $_.result -ne 'Passed' }).Count) { Write-Host "通っていない: $n"; exit 1 }
+}
 exit 0
 ```
 
 ## やらないこと
 - 操作感の判定（後でユーザーが触って決める）
 ````
+
+例の束 K2 は EditMode のテストだけ。PlayMode のテストも入る束は `-Platform All` で回し、名前の 3 つ目（`EditMode`・`PlayMode`）で `<…>-results.xml` を選ぶ（#17 の確認コマンドと同じ読み方）。
 
 設計書を「守る」に入れると、Claude は実装の都合で設計書を書き換えられない。設計を変えたくなったら合格にならず、報告の「やらなかったこと」に理由が残る（設計の直しはユーザーが決める）。
 

@@ -292,7 +292,7 @@ function Get-DeniedMentions([string]$Text, [string[]]$Paths) {
     foreach ($raw in ($Text -split '[\s`''"・、。,;|&(){}=\[\]「」『』（）]+')) {
         $word = $raw.Replace([char]92, [char]47) -replace '^(\./)+', ''
         if (-not $word) { continue }
-        $hit = @($Paths | Where-Object { if ($_.EndsWith('/**')) { $word.StartsWith($_.Substring(0, $_.Length - 2), [System.StringComparison]::Ordinal) } else { $word -ceq $_ } }).Count -gt 0
+        $hit = @($Paths | Where-Object { if ($_.EndsWith('/**', [System.StringComparison]::Ordinal)) { $word.StartsWith($_.Substring(0, $_.Length - 2), [System.StringComparison]::Ordinal) } else { $word -ceq $_ } }).Count -gt 0
         if ($hit -and -not $hits.Contains($word)) { $hits.Add($word) }
     }
     return @($hits)
