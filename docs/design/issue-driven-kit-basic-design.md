@@ -117,7 +117,7 @@ flowchart TB
 | ファイルの頭書き | C# | TypeScript |
 | 改行・文字コード | LF・PowerShell 5.1 のために BOM 付き | LF・BOM 無し |
 
-### 3.4 入れる脚本の約束（導入ガイドの手順 3 が使う）
+### 3.4 入れる脚本の約束（導入ガイドの手順 4 が使う）
 
 | 引数（Unity 版／Node 版） | 動き |
 |---|---|
@@ -126,7 +126,7 @@ flowchart TB
 | `-Update`／`--update` | 既に入っている版を、キットの今の版に上げる。利用先が手を入れる物（Node 版 `CLAUDE.md`、Unity 版 `CLAUDE.md`・`.gitignore`・`.gitattributes`）で中身が違う物は上書きせずに残し、一覧の「残す」と、最後の行の前に残した物の一覧（キットの物 `<キット>/editions/<版>/files/<パス>` と比べて要る所を足すよう促す 1 行つき）と、最後の行の「残した N 件」（`Result: PASS (… 件を写した・残した N 件・版 …)`。0 件なら出さない）で知らせる。それ以外のファイルは、利用先で書き換えていても上げる（上書きする）。差の中身は出さない（差を見せて足すのは Claude Code が人と会話で） |
 | （なし） | 初めて入れる。**既にあるファイルは上書きしない**。利用先が手を入れる物（Node 版 `CLAUDE.md`、Unity 版 `CLAUDE.md`・`.gitignore`・`.gitattributes`）がぶつかったら、既にある物は残し、キットの物を `CLAUDE.kit.md` のように `.kit` を付けた名前で横に置いて（拡張子の無い名前・点で始まる名前は後ろに付ける。`.gitignore.kit`）、残りを入れる。横に置いた物は、利用先の物に足してから消す（Claude Code が人と会話で）。それ以外のファイルがぶつかったら、その一覧を出して**何も書かずに**止まる（`Result: FAIL (ぶつかる N 件)`。部分的に入れない） |
 
-どちらも、終わりに `.issue-kit/version`（キットの元のコミット `commit`・`dirty`・版・入れた日時。Node 版はキットのリポジトリ `owner/name` も。キットの `origin` から読む）を書き、最後の行に `Result: PASS／FAIL` を出す。入れるのはファイルを写すことだけで、**コミット・push・パッケージの追加はしない**（Node 版の vitest の追加は、導入ガイドの手順 3 で Claude Code が行う）。
+どちらも、終わりに `.issue-kit/version`（キットの元のコミット `commit`・`dirty`・版・入れた日時。Node 版はキットのリポジトリ `owner/name` も。キットの `origin` から読む）を書き、最後の行に `Result: PASS／FAIL` を出す。入れるのはファイルを写すことだけで、**コミット・push・パッケージの追加はしない**（Node 版の vitest の追加は、導入ガイドの手順 4 で Claude Code が行う）。
 
 `commit` と `dirty` は、**写す前**のキットで測る（`git rev-parse HEAD`・`git status --porcelain`）。`dirty: true` は「写す前のキットに未コミットの変更があった（`commit` に写した中身が入っていないかもしれない）」という意味で、写した物（キット自身に入れ直すときの写し）は数えない。`editions/<版>/files/` を直してコミットせずに入れ直すと `dirty: true` になり、それは正しい。`false` にしたいときは、直しをコミットしてから入れ直す。
 
@@ -149,7 +149,7 @@ flowchart TB
 
 ### 4.2 editions/unity/
 
-いまのこのリポジトリの**スキル 9 本・`CLAUDE.md`（「プロジェクト」を穴埋めにしたひな形）・作業中に引く文書 9 本・脚本**をそのまま入れる（28 件＋`CLAUDE.md`）。テストのアセンブリ（`Assets/Tests/`）は作品ごとなので入れない（導入ガイドの手順 3 で作らせる）：`issue-run.ps1`・`stop-hook.ps1`・`issue-run-doctor.ps1`・`Sync-Lanes.ps1`・`unity-test.ps1`・`unity-test-procedure.md`・Unity の `.gitignore`・`.gitattributes`・守るもの（`.meta`・シーンの YAML・エディタを止めない）。新しく `install.ps1` を書く。
+いまのこのリポジトリの**スキル 9 本・`CLAUDE.md`（「プロジェクト」を穴埋めにしたひな形）・作業中に引く文書 9 本・脚本**をそのまま入れる（28 件＋`CLAUDE.md`）。テストのアセンブリ（`Assets/Tests/`）は作品ごとなので入れない（導入ガイドの手順 4 で作らせる）：`issue-run.ps1`・`stop-hook.ps1`・`issue-run-doctor.ps1`・`Sync-Lanes.ps1`・`unity-test.ps1`・`unity-test-procedure.md`・Unity の `.gitignore`・`.gitattributes`・守るもの（`.meta`・シーンの YAML・エディタを止めない）。新しく `install.ps1` を書く。
 
 ### 4.3 editions/node/
 
