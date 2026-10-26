@@ -120,6 +120,54 @@ test('報告の「合格」の行', () => {
   assert.ok(!lib.reportClaimsPass('## 結果: 未合格'));
 });
 
+test('まとめ（Node 版）: 作業場所の絶対パスを書かない', () => {
+  const base = { runStamp: '20261024-0859', repo: 'o/app', logDir: '.issue-run/logs/20261024-0859/', aborted: '', results: [] };
+  for (const root of ['/Users/someone-mac/work/app', 'C:\\Users\\someone-win\\work\\app', '/Users/someone-mac/work/app/']) {
+    const md = lib.summaryMarkdown({ ...base, root, branch: 'main' });
+    assert.doesNotMatch(md, /someone|Users/);
+    assert.match(md, /作業場所 app（main）/);
+  }
+  assert.match(lib.summaryMarkdown({ ...base, root: '/Users/someone-mac/x', folder: 'app', branch: 'lane-a' }), /作業場所 app（lane-a）/);
+});
+
+test('終わりの知らせ（Node 版）: Mac は通知を出し、ほかはベルだけ', () => {
+  const results = [{ number: 7, status: 'PASS' }, { number: 8, status: 'NOT-PASS' }];
+  const mac = lib.finishNotice({ platform: 'darwin', results });
+  assert.equal(mac.bell, '\x07issue-run 終わり: #7 PASS #8 NOT-PASS');
+  assert.deepEqual(mac.osascript, ['-e', 'display notification "issue-run 終わり: #7 PASS #8 NOT-PASS" with title "issue-run"']);
+  for (const platform of ['win32', 'linux']) {
+    const n = lib.finishNotice({ platform, results });
+    assert.equal(n.bell, mac.bell);
+    assert.equal(n.osascript, null);
+  }
+  // 中断の理由の " と \ を逃がす・改行は空白
+  const ab = lib.finishNotice({ platform: 'darwin', results: [], aborted: 'gh "x" が C:\\a で失敗\n2 行目' });
+  assert.match(ab.bell, /^\x07issue-run 終わり: なし（中断: /);
+  assert.equal(ab.osascript[1], 'display notification "issue-run 終わり: なし（中断: gh \\"x\\" が C:\\\\a で失敗 2 行目）" with title "issue-run"');
+  // --no-notify
+  assert.deepEqual(lib.finishNotice({ platform: 'darwin', results, notify: false }), { bell: '', osascript: null });
+  // 脚本は引数 --no-notify を読み、知らせを回の結果に響かせない
+  const src = read(join(nodeRoot, 'files/scripts/issue-run/issue-run.mjs'));
+  assert.match(src, /args\['no-notify'\]/);
+  assert.match(src, /try \{ run\('osascript', notice\.osascript\); \} catch/);
+});
+
+test('対象 0 件（Node 版）: 履歴に 1 行残し、直近に合格した Issue を出す', () => {
+  assert.equal(lib.runsLogLine({ runStamp: '20261024-085900', count: 0 }), '20261024-085900\t対象 0 件\tなし\t-\n');
+  assert.equal(lib.runsLogLine({ runStamp: '20261024-085900', count: 2, results: [{ number: 7, status: 'PASS' }, { number: 8, status: 'NOT-PASS' }], summary: 'docs/reports/2026/10/24/01-issue-run.md' }),
+    '20261024-085900\t対象 2 件\t#7 PASS #8 NOT-PASS\tdocs/reports/2026/10/24/01-issue-run.md\n');
+  assert.equal(lib.runsLogLine({ runStamp: 's', count: 1, aborted: '認証が\n切れた\tx', summary: 'a.md' }), 's\t対象 1 件\tなし 中断: 認証が 切れた x\ta.md\n');
+  assert.equal(lib.latestDoneText([{ number: 7, title: '終わりの知らせ', updatedAt: '2026-10-24T08:59:00Z' }]), '直近に合格した Issue: #7 終わりの知らせ（更新 2026-10-24T08:59:00Z）');
+  assert.equal(lib.latestDoneText([]), '直近に合格した Issue: まだ無い');
+  // 脚本: 0 件の所で履歴に足してから終わり、claude-done を閉じたものも含めて更新順に 1 件だけ問う。DryRun はその前に終わる
+  const src = read(join(nodeRoot, 'files/scripts/issue-run/issue-run.mjs'));
+  const zero = src.slice(src.indexOf('if (!targets.length) {'));
+  assert.ok(src.indexOf('if (DRY_RUN) {') < src.indexOf('if (!targets.length) {'));
+  assert.match(zero.slice(0, zero.indexOf('process.exit(0)')), /appendFileSync\(RUNS_LOG, L\.runsLogLine\(\{ runStamp: RUN_STAMP, count: 0 \}\)/);
+  assert.match(zero, /'--state', 'all', '--search', 'sort:updated-desc', '--limit', '1'/);
+  assert.match(src, /RUNS_LOG = join\(ROOT, LOG_BASE, 'runs\.log'\)/);
+});
+
 // 権限を返す関数を外から与える（GitHub を呼ばない）。読めない人は投げる
 const perms = { owner: 'admin', member: 'write', lead: 'maintain', guest: 'read', triager: 'triage' };
 const permissionOf = (login) => { if (!(login in perms)) throw new Error('HTTP 404'); return perms[login]; };

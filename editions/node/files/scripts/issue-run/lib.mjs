@@ -199,8 +199,14 @@ export function readText(path) {
 // 6 章：まとめの並び
 export const STATUS_ORDER = { 'ABORTED': 0, 'NOT-PASS': 1, 'NO-CRITERIA': 2, 'WAITING': 3, 'PASS': 4 };
 
-export function summaryMarkdown({ runStamp, script = 'scripts/issue-run/issue-run.mjs', repo, root, logDir, aborted, results }) {
-  const lines = [`# Issue の無人実行のまとめ（${runStamp}）`, '', `\`${script}\` が自動で書いた。リポジトリ ${repo}・作業場所 \`${root}\`・ログ \`${logDir}\``, ''];
+// 6 章：作業場所はフォルダー名だけ（絶対パスはホームのユーザー名を含むので書かない）
+export function folderName(root) {
+  return String(root ?? '').replaceAll('\\', '/').replace(/\/+$/, '').split('/').pop();
+}
+
+export function summaryMarkdown({ runStamp, script = 'scripts/issue-run/issue-run.mjs', repo, root, folder, branch, logDir, aborted, results }) {
+  const where = `${folder ?? folderName(root)}${branch ? `（${branch}）` : ''}`;
+  const lines = [`# Issue の無人実行のまとめ（${runStamp}）`, '', `\`${script}\` が自動で書いた。リポジトリ ${repo}・作業場所 ${where}・ログ \`${logDir}\``, ''];
   if (aborted) lines.push(`**途中で止まった: ${aborted}**`, '');
   lines.push('| Issue | 結果 | 分 | 時刻 | 回 | コミット | 断られたツール |', '|---|---|---|---|---|---|---|');
   const sorted = [...results].sort((a, b) => (STATUS_ORDER[a.status] - STATUS_ORDER[b.status]) || (a.number - b.number));
@@ -212,4 +218,34 @@ export function summaryMarkdown({ runStamp, script = 'scripts/issue-run/issue-ru
     if (r.report) lines.push('', r.report.replace(/^## /gm, '### '));
   }
   return lines.join('\n') + '\n';
+}
+
+// 6 章：結果の並び（「#7 PASS #8 NOT-PASS」）。0 件は「なし」
+export function resultsText(results) {
+  return results.length ? results.map((r) => `#${r.number} ${r.status}`).join(' ') : 'なし';
+}
+
+// 6 章：履歴 .issue-run/logs/runs.log の 1 行（タブ区切り・改行つき）。まとめが無い回（対象 0 件）は「-」
+export function runsLogLine({ runStamp, count, results = [], aborted = '', summary = '' }) {
+  const res = resultsText(results) + (aborted ? ` 中断: ${String(aborted).replace(/\s+/g, ' ')}` : '');
+  return [runStamp, `対象 ${count} 件`, res, summary || '-'].join('\t') + '\n';
+}
+
+// 6 章：対象 0 件のときに出す、直近に合格した Issue（gh issue list --json number,title,updatedAt の結果）
+export function latestDoneText(list) {
+  const t = (list ?? [])[0];
+  return t ? `直近に合格した Issue: #${t.number} ${t.title}（更新 ${t.updatedAt ?? '?'}）` : '直近に合格した Issue: まだ無い';
+}
+
+// 6 章：AppleScript の文字列。\ と " を逃がし、改行は空白にする
+export function appleScriptString(text) {
+  return `"${String(text).replace(/[\r\n]+/g, ' ').replaceAll('\\', '\\\\').replaceAll('"', '\\"')}"`;
+}
+
+// 6 章：終わりの知らせ。窓に出す文（頭にベル）と、Mac なら osascript の引数（ほかは null）。notify が偽なら何も出さない
+export function finishNotice({ platform, results = [], aborted = '', notify = true }) {
+  if (!notify) return { bell: '', osascript: null };
+  const text = `issue-run 終わり: ${resultsText(results)}${aborted ? `（中断: ${aborted}）` : ''}`;
+  const osascript = platform === 'darwin' ? ['-e', `display notification ${appleScriptString(text)} with title "issue-run"`] : null;
+  return { bell: `\x07${text}`, osascript };
 }

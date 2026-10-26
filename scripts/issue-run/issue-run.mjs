@@ -4,9 +4,10 @@
 //   node scripts/issue-run/issue-run.mjs                 # 札の付いた Issue を全部、順に
 //   node scripts/issue-run/issue-run.mjs --issue 12      # 1 件だけ
 //   node scripts/issue-run/issue-run.mjs --dry-run       # 対象・合格の条件・渡す指示文を見るだけ（Claude は起動しない）
+//   node scripts/issue-run/issue-run.mjs --no-notify     # 終わりの知らせ（ベル・Mac の通知）を出さない
 // 合格かどうかを Claude に決めさせない。報告の「## 結果: 合格」・守るファイルが開始時のまま・確認コマンドの終了コード 0 の 3 つがそろったときだけ合格。
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
-import { join, basename, resolve, dirname } from 'node:path';
+import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { join, basename, resolve, dirname, relative } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ const MAX_LIMIT_WAITS = num(args['max-limit-waits'], 16);
 const MAX_STOP_BLOCKS = 30;
 const MODEL = args.model ?? 'claude-opus-5-5';
 const DRY_RUN = !!args['dry-run'];
+const NOTIFY = !args['no-notify'];
 const ONE_ISSUE = num(args.issue, 0);
 const LOG_BASE = '.issue-run/logs';
 const SKIP = [L.LABELS.working.name, L.LABELS.done.name, L.LABELS.failed.name];
@@ -113,6 +115,7 @@ const LOG_DIR = join(ROOT, LOG_BASE, RUN_STAMP);
 const LOCK_FILE = join(ROOT, LOG_BASE, 'run.lock');
 const ISSUE_FILE = join(ROOT, LOG_BASE, 'run.issue');
 const RUNTIME_SETTINGS = join(LOG_DIR, 'settings.json');
+const RUNS_LOG = join(ROOT, LOG_BASE, 'runs.log');
 
 function gh(ghArgs) {
   const r = run('gh', ghArgs, { cwd: ROOT });
@@ -237,7 +240,16 @@ if (DRY_RUN) {
   }
   process.exit(0);
 }
-if (!targets.length) process.exit(0);
+// 対象 0 件の回も履歴に 1 行残し、直近に合格した Issue を出す（仕様 6 章）
+if (!targets.length) {
+  appendFileSync(RUNS_LOG, L.runsLogLine({ runStamp: RUN_STAMP, count: 0 }), 'utf8');
+  let latest;
+  try { latest = L.latestDoneText(ghJson(['issue', 'list', '--repo', REPO, '--label', L.LABELS.done.name, '--state', 'all', '--search', 'sort:updated-desc', '--limit', '1', '--json', 'number,title,updatedAt'])); }
+  catch (e) { latest = `直近に合格した Issue: 読めなかった（${String(e.message).split('\n')[0]}）`; }
+  step(latest);
+  step(`履歴: ${LOG_BASE}/runs.log`);
+  process.exit(0);
+}
 
 writeFileSync(LOCK_FILE, String(process.pid), 'ascii');
 mkdirSync(LOG_DIR, { recursive: true });
@@ -381,7 +393,13 @@ try {
   const nums = readdirSync(dayDir).map((n) => /^(\d{2})-/.exec(n)?.[1]).filter(Boolean).map(Number);
   const next = (nums.length ? Math.max(...nums) : 0) + 1;
   const summaryPath = join(dayDir, `${String(next).padStart(2, '0')}-issue-run.md`);
-  writeFileSync(summaryPath, L.summaryMarkdown({ runStamp: RUN_STAMP, repo: REPO, root: ROOT, logDir: LOG_DIR_REL, aborted, results }), 'utf8');
+  writeFileSync(summaryPath, L.summaryMarkdown({ runStamp: RUN_STAMP, repo: REPO, folder: basename(ROOT), branch: BRANCH, logDir: LOG_DIR_REL, aborted, results }), 'utf8');
   step(`まとめ: ${summaryPath}`);
+  // 履歴と終わりの知らせ（仕様 6 章）。知らせが失敗しても回の結果は変えない
+  const summaryRel = relative(ROOT, summaryPath).replaceAll('\\', '/');
+  appendFileSync(RUNS_LOG, L.runsLogLine({ runStamp: RUN_STAMP, count: targets.length, results, aborted, summary: summaryRel }), 'utf8');
+  const notice = L.finishNotice({ platform: process.platform, results, aborted, notify: NOTIFY });
+  if (notice.bell) console.log(notice.bell);
+  if (notice.osascript) { try { run('osascript', notice.osascript); } catch { /* 知らせは結果に影響させない */ } }
 }
 process.exit(aborted ? 1 : 0);

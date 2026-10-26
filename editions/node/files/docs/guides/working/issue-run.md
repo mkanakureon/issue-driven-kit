@@ -75,10 +75,13 @@ node scripts/issue-run/issue-run.mjs --work-dir ../app-auth   # 作業場所を�
 | `--limit-wait-minutes` / `--max-limit-waits` | 30 / 16 | 利用上限に当たったら待ってやり直す（回数に数えない） |
 | `--model` | `claude-opus-5-5` | 無人の回に使うモデル |
 | `--work-dir` | （選ぶ） | 作業場所の worktree。指定すると選ぶ画面を出さない |
-| `--dry-run` | — | Claude を起動せず、対象・条件・守るファイル・指示文だけ出す |
+| `--dry-run` | — | Claude を起動せず、対象・条件・守るファイル・指示文だけ出す（履歴も書かない） |
+| `--no-notify` | — | 終わりの知らせ（ベル・Mac の通知）を出さない |
 
 - **作業場所は起動するときに選ぶ。** 窓から起動すると worktree の一覧が出るので、番号で選ぶ（Enter なら起動したフォルダー。worktree が 1 つならそのまま）。
 - **worktree ごとに 1 本ずつ、同時に動かせる。** 同じ Issue を取り合ったら両方とも譲る。
+- **終わったら知らせる。** 1 件以上回した回の終わり（中断も含む）に、窓にベルと「issue-run 終わり: #7 PASS #8 NOT-PASS」のような 1 行を出す。Mac では通知センターにも出す（`osascript`。PC の中だけで、外へは送らない）。Windows・Linux はベルだけ。止めるなら `--no-notify`。
+- **対象 0 件でも履歴に残る。** 「対象 0 件」のときは、直近に合格した Issue（`claude-done`。閉じたものも含む）を 1 件出す。前の回で済んでいたのか、`claude-run` の付け忘れかは、これと `.issue-run/logs/runs.log` で見分ける。
 - **worktree の `node_modules/` は別。** 新しい worktree では先に `npm install` を済ませておく。worktree を作るのはユーザー（CLAUDE.md）。
 
 ## 動いている間に見るもの
@@ -89,10 +92,11 @@ node scripts/issue-run/issue-run.mjs --work-dir ../app-auth   # 作業場所を�
 
 読み方と、合格しなかったときの直し方は `docs/guides/procedures/issue-goal-setting.md` の 8 章。
 
-1. `docs/reports/YYYY/MM/DD/NN-issue-run.md` — 合格しなかった → 合格した、の順のまとめ
+1. `docs/reports/YYYY/MM/DD/NN-issue-run.md` — 合格しなかった → 合格した、の順のまとめ（コミットされるので、作業場所はフォルダー名だけで書き、PC の中の絶対パスを書かない）
 2. 各 Issue のコメント — 1 行目に結果・**かかった分と開始〜終了の時刻**（分の単位。例 `6 分（2026-10-22 09:36〜09:42）`。始まりは「実行中」の札を付けた直後、終わりは合否が決まった時。起動前の点検は含まない）・回数・コミットの数・作業場所・`HEAD`。続いて合格の条件ごとの判定表・やったこと・コミット・**選んだこと（Claude が自分で決めた点と戻し方）**・やらなかったこと・未採用の改善
 3. 合格したものは確認して閉じ、push する
 4. 中身のログは `.issue-run/logs/<日時>/`（確認コマンドの写しは `issue-<番号>-check.mjs`、回した出力は `issue-<番号>-check<回>.txt`）
+5. 回の履歴は `.issue-run/logs/runs.log` — 回ごとに 1 行（タブ区切りで、実行の時刻・`対象 <N> 件`・`#7 PASS #8 NOT-PASS` のような結果・まとめの相対パス〔0 件なら `-`〕）。対象 0 件の回も残る。`--dry-run` は書かない
 
 ## Issue の書き方
 
