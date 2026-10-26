@@ -274,6 +274,30 @@ function Get-ProtectedFiles([string]$Code) {
     return @($found)
 }
 
+# 設定（$SettingsTemplate の JSON の文字列）の deny のうち、作業場所の直下の書き換えを断るパス
+# （Edit(//{{REPO}}/<パス>)・Write(//{{REPO}}/<パス>) の <パス>）を、重ならずに並べて返す。キットの Node 版 denyEditPaths と同じ決まり
+function Get-DenyEditPaths([string]$SettingsText) {
+    $found = [System.Collections.Generic.List[string]]::new()
+    foreach ($rule in @(($SettingsText | ConvertFrom-Json).permissions.deny)) {
+        $m = [regex]::Match([string]$rule, '^(?:Edit|Write)\(//\{\{REPO\}\}/(.+)\)$')
+        if ($m.Success -and -not $found.Contains($m.Groups[1].Value)) { $found.Add($m.Groups[1].Value) }
+    }
+    return @($found)
+}
+
+# 文字列（合格の条件と確認コマンド）の中で、作業場所の直下から見て deny のパスに当たる語を、重ならずに返す。
+# `**` で終わるパスはその下全部に当たる。頭にフォルダーが付いた語は当たらない。大文字小文字は区別する（キットの Node 版 deniedMentions と同じ決まり）
+function Get-DeniedMentions([string]$Text, [string[]]$Paths) {
+    $hits = [System.Collections.Generic.List[string]]::new()
+    foreach ($raw in ($Text -split '[\s`''"・、。,;|&(){}=\[\]「」『』（）]+')) {
+        $word = $raw.Replace([char]92, [char]47) -replace '^(\./)+', ''
+        if (-not $word) { continue }
+        $hit = @($Paths | Where-Object { if ($_.EndsWith('/**')) { $word.StartsWith($_.Substring(0, $_.Length - 2), [System.StringComparison]::Ordinal) } else { $word -ceq $_ } }).Count -gt 0
+        if ($hit -and -not $hits.Contains($word)) { $hits.Add($word) }
+    }
+    return @($hits)
+}
+
 # 守るファイルの中身の指紋（SHA256）を「指紋<TAB>パス」で書く。stop-hook.ps1 も同じ形式で読む。
 function Save-ProtectSnapshot([string[]]$Files, [string]$OutFile) {
     $lines = foreach ($f in $Files) { "{0}`t{1}" -f (Get-FileHash -LiteralPath (Join-Path $RepoRoot $f) -Algorithm SHA256).Hash, $f }
@@ -420,11 +444,14 @@ if ($LASTEXITCODE -ne 0) { throw 'gh にログインしていない。gh auth lo
 $targets = @(Get-TargetIssues)   # @() で包む（1 件・0 件だと配列が崩れ、Set-StrictMode の下で .Count が止まる）
 Write-Step ("対象 {0} 件: {1}" -f $targets.Count, (($targets | ForEach-Object { "#$($_.number)" }) -join ' '))
 if ($DryRun) {
+    $denyPaths = @(Get-DenyEditPaths (Get-Content $SettingsTemplate -Raw -Encoding utf8))
     foreach ($t in $targets) {
         $c = Get-PassCriteria $t.body
         Write-Host ("#{0} 合格の条件 {1} 行・確認コマンド {2}" -f $t.number, $c.Items.Count, $(if ($c.Check) { 'あり' } else { 'なし' }))
         if ($c.Items.Count -eq 0 -or -not $c.Check) { Write-Host '  → 合格の条件か確認コマンドが無いので起動しない'; continue }
         Write-Host ("  守るファイル: {0}" -f ((Get-ProtectedFiles $c.Check) -join ', '))
+        $denied = @(Get-DeniedMentions (($c.Items -join "`n") + "`n" + $c.Check) $denyPaths)
+        if ($denied.Count) { Write-Host ("  deny のパス: {0}（無人の回では直せない。直す必要があれば人が直す。変えないことを確かめるだけなら無視してよい）" -f ($denied -join ', ')) }
         $pre = @(Get-Prerequisites $t.body)
         if ($pre.Count) { Write-Host ("  前提: {0}（いま済んでいないもの: {1}）" -f (($pre | ForEach-Object { "#$_" }) -join ' '), ((Get-UnmetPrerequisites $pre) -join ' ')) }
     }

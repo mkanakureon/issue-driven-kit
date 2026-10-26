@@ -65,7 +65,7 @@ kaedevn（UE）の issue-run をそのまま持ってきた（2026-10-22）。ka
    [Environment]::SetEnvironmentVariable('CLAUDE_CODE_OAUTH_TOKEN', '<表示されたトークン>', 'User')
    ```
    新しいターミナルを開いてから使う。
-4. 試し: `pwsh Scripts\issue-run.ps1 -DryRun` で、対象の Issue・合格の条件の行数・守るファイル・渡す指示文を見る。
+4. 試し: `pwsh Scripts\issue-run.ps1 -DryRun` で、対象の Issue・合格の条件の行数・守るファイル・渡す指示文を見る。合格の条件（箇条書きと確認コマンド）に、無人の回の設定の deny が書き換えを断るパス（`$SettingsTemplate` の `Edit(//{{REPO}}/…)`・`Write(//{{REPO}}/…)`。いまは直下の `CLAUDE.md`・`.claude/**`・`Docs/InSpecs/**`）に当たる語があれば、Issue ごとに「deny のパス: <語>, …（無人の回では直せない。…）」の 1 行で知らせる（関数 `Get-DenyEditPaths`・`Get-DeniedMentions`）。知らせるだけで起動は止めない。直させる条件なら人が直す（`issue-goal-setting.md` 4.4）。
 
 ## 起動
 
