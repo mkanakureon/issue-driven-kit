@@ -167,7 +167,7 @@ GitHub の「New issue」でひな形「Claude に無人で進めさせる」を
 
 - 後の段の確認コマンドが「前の段と同じ結果か」を比べるなら、前の段に比べるための記録を機械で読める形（JSON）で残させる。
 - 前の段の Issue の最後に「## 次の段」を書いておくと、後で読むとき流れが分かる（スクリプトは読まない）。
-- 設計書を書く Issue の合格の条件に「実装を分けた束（K1・K2…）の一覧と、束ごとの確認コマンドの案」を入れておくと、2 回目以降の Issue がその束を 1 つずつ指せる。
+- 設計書を書く Issue の合格の条件に「実装を分けた束（K1・K2…）の一覧と、束ごとの確認コマンドの案」を入れておくと、2 回目以降の Issue がその束を 1 つずつ指せる。テストの名前の表では、束は印の文（「（K2）」など）に混ぜず**「束」の列**に書かせる（見本は 6.2。列の値で絞れば、印の書き方の揺れを確認コマンドで吸わずに済む）。
 - 人が手でやるもの（本番への配備・別の PC での確認など）も Issue にしてよいが、`claude-run` を付けない。
 
 ## 6. 例
@@ -216,7 +216,7 @@ docs/03-roadmap.md の「優先的にテストする失敗ケース」
 ## 合格の条件
 - 設計書が docs/guides/working/score-validation-design.md にある
 - §0 にゴール・合格の条件の表・実装の Issue に使う確認コマンドの案がある
-- テストの名前の一覧の表がある
+- テストの名前の一覧の表があり、見出しの行が `| 束 | テストの名前 | 何を確かめるか |` で始まる（束は「束」の列に書き、名前の文に混ぜない）
 
 ```js
 import { readFileSync, existsSync } from 'node:fs';
@@ -226,6 +226,7 @@ const d = `${dir}/score-validation-design.md`;
 const t = existsSync(d) ? readFileSync(d, 'utf8') : '';
 check(t.length > 0, '設計書がある');
 for (const h of ['## 0.', 'ゴール', '合格の条件', '確認コマンド', 'テストの名前']) check(t.includes(h), `ある: ${h}`);
+check(/^\| *束 *\| *テストの名前 *\|/m.test(t), 'テストの名前の表に「束」の列がある');
 done();
 ```
 
@@ -233,31 +234,42 @@ done();
 - 実装（2回目の Issue でやる）
 ````
 
+設計書のテストの名前の表は、この形にさせる（束は「束」の列に 1 つだけ書く。名前はバッククォートで囲む）。
+
+| 束 | テストの名前 | 何を確かめるか |
+|---|---|---|
+| K1 | `マイナスのスコアなら 400 を返す` | 範囲の下限 |
+| K1 | `整数でないスコアなら 400 を返す` | 型 |
+| K2 | `知らないゲーム ID なら 404 を返す` | ゲーム ID |
+
 ### 6.3 大きい・2回目 — 実装する
 
 ````
-タイトル: スコア投稿の検証を実装する（設計書 §1〜§3）
+タイトル: スコア投稿の検証を実装する（設計書の束 K2）
 
 ## 前提
 - #1
 
 ## やること
-設計書どおりに検証を実装し、設計書の合格の条件のうち機械で測れるものを全部満たす。
+設計書の束 K2 を設計書どおりに実装し、束 K2 の合格の条件のうち機械で測れるものを全部満たす。
 
 ## 元の文書
-docs/guides/working/score-validation-design.md の §1〜§3
+docs/guides/working/score-validation-design.md の束 K2
 
 ## 合格の条件
-- 設計書のテストの名前の表のテストが全部ある・通る
+- 設計書のテストの名前の表で「束」の列が K2 の行のテスト（12 本）が全部ある・通る
 - 既存のテストが全部通る
 
 ```js
 // 守る: docs/guides/working/score-validation-design.md
 import { readFileSync } from 'node:fs';
-import { runTests, requireTests, done } from './scripts/issue-run/check-lib.mjs';
-// テストの名前は設計書の表から読む（Issue に写さない。表が正）
+import { runTests, requireTests, check, done } from './scripts/issue-run/check-lib.mjs';
+// テストの名前は設計書の表から読む（Issue に写さない。表が正）。「束」の列の値で行を絞る
 const t = readFileSync('docs/guides/working/score-validation-design.md', 'utf8');
-const names = [...t.matchAll(/^\| `([^`]+)` \|/gm)].map((m) => m[1]);
+const rows = [...t.matchAll(/^\| *([^|`]+?) *\| *`([^`]+)` *\|/gm)];
+const names = rows.filter((m) => m[1] === 'K2').map((m) => m[2]);
+// 本数は Issue を書く人が表を数えて書く（requireTests は渡された名前しか見ないので、読めなかった名前は確かめられない）
+check(names.length === 12, '表から読めた束 K2 の名前が 12 本');
 runTests();
 requireTests(names);
 done();
