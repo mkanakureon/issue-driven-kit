@@ -95,7 +95,7 @@ flowchart LR
 1. 道具を入れる（6.1）。入れた後は**新しい窓を開く**（古い窓の PATH には入らない）。
 2. `gh auth login`。ブラウザが開かなければ、出たコードを https://github.com/login/device に入れる。
 3. `git clone <このリポジトリ>` → `npm install`。Windows でパスの上限（260 字）に当たるなら `git config --global core.longpaths true` を先に。
-4. 無人用の長期トークン: `claude setup-token` → 環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れる → 新しい窓。
+4. 無人用の長期トークン: Claude Code の外のターミナル（Windows はもう 1 つのターミナルの窓、Mac はターミナル）で `claude setup-token` を回し、出た値は会話に貼らないで、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れる（Mac は `~/.zprofile`）→ 新しい窓。
 5. `node scripts/issue-run/doctor.mjs --run-tests` → 最後の行が `Result: PASS`。WARN は 6.3 を見て直す。
 6. `node scripts/issue-run/issue-run.mjs --dry-run`。
 

@@ -54,7 +54,7 @@ GitHub Issue に札を付けておくと、`scripts/issue-run/issue-run.mjs` が
    どちらも: npm install -g npm@11.6.2 ／ gh auth login
    ```
 2. git と GitHub のリポジトリ（`origin`）を用意する（`docs/guides/working/github-repo.md`）。
-3. 無人の `claude -p` は対話のログインと別に認証が切れることがある（元のリポジトリで `OAuth session expired` で落ちた）。`claude setup-token` で長期のトークンを作り、環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れる（Windows はユーザーの環境変数、Mac は `~/.zshrc` などに `export`）。新しいターミナルを開いてから使う。
+3. 無人の `claude -p` は対話のログインと別に認証が切れることがある（元のリポジトリで `OAuth session expired` で落ちた）。Claude Code の外のターミナル（Windows はもう 1 つのターミナルの窓、Mac はターミナル）で `claude setup-token` を回して長期のトークンを作り、出た値は会話に貼らないで、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れる（Windows はユーザーの環境変数、Mac は `~/.zprofile` に `export`）。`!` を付けて Claude Code の中で回すと、端末（TTY）が無くブラウザで承認した後で止まる。新しいターミナルを開いてから使う。
 4. 点検: `node scripts/issue-run/doctor.mjs`。NG が 0 になるまで直す。
 5. 試し: `node scripts/issue-run/issue-run.mjs --dry-run` で、対象の Issue・合格の条件の行数・守るファイル・渡す指示文を見る。
 
