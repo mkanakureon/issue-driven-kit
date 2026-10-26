@@ -2,9 +2,9 @@
   "kit": "issue-driven-kit",
   "edition": "node",
   "repo": "mkanakureon/issue-driven-kit",
-  "commit": "71ecc81688d10e9b54f6501279560bde871d4bf1",
+  "commit": "5bef26740f9617b581ed4f20ee00155846b87819",
   "dirty": true,
-  "installedAt": "2026-10-26T12:49:12.496Z",
+  "installedAt": "2026-10-26T13:38:36.210Z",
   "files": [
     ".claude/issue-run/prompt.md",
     ".claude/issue-run/settings.json",
