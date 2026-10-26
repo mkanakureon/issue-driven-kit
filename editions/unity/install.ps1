@@ -3,7 +3,7 @@
 # 約束の正: docs/design/issue-driven-kit-basic-design.md の 3.4。導入の手順: shared/manuals/issue-driven-kit-install-guide.md
 #   pwsh editions\unity\install.ps1 -Target <リポジトリ> -DryRun   # 写すファイルとぶつかるファイルを出すだけ
 #   pwsh editions\unity\install.ps1 -Target <リポジトリ>           # 初めて入れる（既にあるファイルは上書きしない。CLAUDE.md などがぶつかったらキットの物を CLAUDE.kit.md として横に置く）
-#   pwsh editions\unity\install.ps1 -Target <リポジトリ> -Update   # 入っている版を上げる（利用先が手を入れるファイルは上書きしない）
+#   pwsh editions\unity\install.ps1 -Target <リポジトリ> -Update   # 入っている版を上げる（利用先が手を入れるファイルは上書きせずに残し、「残した N 件」で知らせる）
 # 写すだけ。コミット・push・パッケージの追加はしない。最後の行が Result: PASS／FAIL。
 param(
     [Parameter(Mandatory)][string]$Target,
@@ -104,5 +104,11 @@ if ($asides.Count) {
     Write-Host '既にある物は残し、キットの物を横に置いた。既にある物にキットの物の中身を足してから、横に置いた物を消す（Claude Code に頼める）:'
     $asides | ForEach-Object { Write-Host "  $($_.Aside)（$($_.Rel) に足す）" }
 }
-Write-Host "Result: PASS ($written 件を写した$(if ($asides.Count) { "・横に置いた $($asides.Count) 件" })・版 $Edition・キット $($version.commit.Substring(0, [Math]::Min(8, $version.commit.Length)))$(if ($dirty) { '（未コミットの変更あり）' }))"
+# -Update で残した物（利用先が手を入れる物で中身が違う）。上書きしないので、キットの物との差は人が Claude Code と見る
+$kept = @($plan | Where-Object State -eq 'keep')
+if ($kept.Count) {
+    Write-Host "利用先が手を入れる物は上書きせずに残した。キットの物（<キット>/editions/$Edition/files/<パス>）と比べて、要る所を足す（Claude Code に頼める）:"
+    $kept | ForEach-Object { Write-Host "  $($_.Rel)" }
+}
+Write-Host "Result: PASS ($written 件を写した$(if ($kept.Count) { "・残した $($kept.Count) 件" })$(if ($asides.Count) { "・横に置いた $($asides.Count) 件" })・版 $Edition・キット $($version.commit.Substring(0, [Math]::Min(8, $version.commit.Length)))$(if ($dirty) { '（未コミットの変更あり）' }))"
 exit 0

@@ -304,6 +304,34 @@ test('入れる脚本（Node 版）: 既にある CLAUDE.md は残し、キッ�
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('入れる脚本（Node 版）: --update は利用先が手を入れる物を残し、一覧と最後の行に残した数を出して残りを上げる', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kit-node-update-'));
+  try {
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    const inst = join(nodeRoot, 'install.mjs');
+    assert.equal(node([inst, '--target', dir]).status, 0);
+    // 何も変えていなければ、残す物は無く「残した」を出さない
+    const same = node([inst, '--target', dir, '--update']);
+    assert.equal(same.status, 0, same.stdout + same.stderr);
+    assert.doesNotMatch(same.stdout, /残した/);
+    // 利用先が CLAUDE.md と脚本に手を入れた後に上げる
+    writeFileSync(join(dir, 'CLAUDE.md'), '# mine\n');
+    writeFileSync(join(dir, 'scripts/test.mjs'), '// mine\n');
+    const u = node([inst, '--target', dir, '--update']);
+    assert.equal(u.status, 0, u.stdout + u.stderr);
+    assert.match(u.stdout, /^keep +CLAUDE\.md$/m);
+    assert.match(u.stdout, /^update +scripts\/test\.mjs$/m);
+    const lines = u.stdout.trim().split(/\r?\n/);
+    const last = lines.at(-1);
+    assert.match(last, /^Result: PASS \(1 件を写した・残した 1 件・版 node/);
+    // 最後の行の前に、キットの物と比べるよう促す 1 行と残した物の一覧
+    assert.equal(lines.at(-2), '  CLAUDE.md');
+    assert.match(lines.at(-3), /上書きせずに残した。キットの物（<キット>\/editions\/node\/files\/<パス>）と比べて/);
+    assert.equal(read(join(dir, 'CLAUDE.md')), '# mine\n', '残す物を上書きした');
+    assert.deepEqual(readFileSync(join(dir, 'scripts/test.mjs')), readFileSync(join(nodeRoot, 'files/scripts/test.mjs')), '残りを上げていない');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('入れる脚本（Node 版）: 利用先が手を入れる物でないファイルがぶつかると、何も書かずに FAIL', () => {
   const dir = mkdtempSync(join(tmpdir(), 'kit-node-conflict-'));
   try {

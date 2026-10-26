@@ -3,7 +3,7 @@
 // 約束の正: docs/design/issue-driven-kit-basic-design.md の 3.4。導入の手順: shared/manuals/issue-driven-kit-install-guide.md
 //   node editions/node/install.mjs --target <リポジトリ> --dry-run   # 写すファイルとぶつかるファイルを出すだけ
 //   node editions/node/install.mjs --target <リポジトリ>             # 初めて入れる（既にあるファイルは上書きしない。CLAUDE.md がぶつかったらキットの物を CLAUDE.kit.md として横に置く）
-//   node editions/node/install.mjs --target <リポジトリ> --update    # 入っている版を上げる（利用先が手を入れるファイルは上書きしない）
+//   node editions/node/install.mjs --target <リポジトリ> --update    # 入っている版を上げる（利用先が手を入れるファイルは上書きせずに残し、「残した N 件」で知らせる）
 // 写すだけ。コミット・push・パッケージの追加はしない（vitest の追加は導入ガイドの手順 4 で Claude Code が行う）。最後の行が Result: PASS／FAIL。
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, statSync } from 'node:fs';
 import { join, dirname, relative, resolve } from 'node:path';
@@ -108,5 +108,11 @@ if (asides.length) {
   console.log('既にある物は残し、キットの物を横に置いた。既にある物にキットの物の中身を足してから、横に置いた物を消す（Claude Code に頼める）:');
   asides.forEach((p) => console.log(`  ${p.aside}（${p.rel} に足す）`));
 }
-console.log(`Result: PASS (${written} 件を写した${asides.length ? `・横に置いた ${asides.length} 件` : ''}・版 ${EDITION}・キット ${version.commit.slice(0, 8)}${dirty ? '（未コミットの変更あり）' : ''})`);
+// --update で残した物（利用先が手を入れる物で中身が違う）。上書きしないので、キットの物との差は人が Claude Code と見る
+const kept = plan.filter((p) => p.state === 'keep');
+if (kept.length) {
+  console.log(`利用先が手を入れる物は上書きせずに残した。キットの物（<キット>/editions/${EDITION}/files/<パス>）と比べて、要る所を足す（Claude Code に頼める）:`);
+  kept.forEach((p) => console.log(`  ${p.rel}`));
+}
+console.log(`Result: PASS (${written} 件を写した${kept.length ? `・残した ${kept.length} 件` : ''}${asides.length ? `・横に置いた ${asides.length} 件` : ''}・版 ${EDITION}・キット ${version.commit.slice(0, 8)}${dirty ? '（未コミットの変更あり）' : ''})`);
 process.exit(0);

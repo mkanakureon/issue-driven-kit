@@ -167,6 +167,39 @@ test('入れる脚本（Unity 版）: 既にある CLAUDE.md・.gitignore は残
   }
 });
 
+test('入れる脚本（Unity 版）: -Update は利用先が手を入れる物を残し、一覧と最後の行に残した数を出して残りを上げる', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kit-unity-update-'));
+  const inst = (...args) => pwsh(['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
+  const files = join(kit, 'editions/unity/files');
+  try {
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    assert.equal(inst().status, 0);
+    // 何も変えていなければ、残す物は無く「残した」を出さない
+    const same = inst('-Update');
+    assert.equal(same.status, 0, same.stdout + same.stderr);
+    assert.doesNotMatch(same.stdout, /残した/);
+    // 利用先が CLAUDE.md・.gitignore と脚本に手を入れた後に上げる
+    writeFileSync(join(dir, 'CLAUDE.md'), '# mine\n');
+    writeFileSync(join(dir, '.gitignore'), 'Library/\n');
+    writeFileSync(join(dir, 'Scripts/unity-test.ps1'), '# mine\n');
+    const u = inst('-Update');
+    assert.equal(u.status, 0, u.stdout + u.stderr);
+    assert.match(u.stdout, /^keep +CLAUDE\.md$/m);
+    assert.match(u.stdout, /^keep +\.gitignore$/m);
+    assert.match(u.stdout, /^update +Scripts\/unity-test\.ps1$/m);
+    const lines = u.stdout.trim().split(/\r?\n/);
+    assert.match(lines.at(-1), /^Result: PASS \(1 件を写した・残した 2 件・版 unity/);
+    // 最後の行の前に、キットの物と比べるよう促す 1 行と残した物の一覧
+    assert.deepEqual(lines.slice(-3, -1).sort(), ['  .gitignore', '  CLAUDE.md']);
+    assert.match(lines.at(-4), /上書きせずに残した。キットの物（<キット>\/editions\/unity\/files\/<パス>）と比べて/);
+    assert.equal(readFileSync(join(dir, 'CLAUDE.md'), 'utf8'), '# mine\n', '残す物を上書きした');
+    assert.equal(readFileSync(join(dir, '.gitignore'), 'utf8'), 'Library/\n', '残す物を上書きした');
+    assert.deepEqual(readFileSync(join(dir, 'Scripts/unity-test.ps1')), readFileSync(join(files, 'Scripts/unity-test.ps1')), '残りを上げていない');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test('入れる脚本（Unity 版）: キット自身に入れ直しても、写した物で dirty を true にしない', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
   // editions/unity/ を一時のキットに写して git init・コミットし、そのキット自身に入れる（本物のキットの作業ツリーの汚れに左右されない）
   const dir = mkdtempSync(join(tmpdir(), 'kit-unity-self-'));

@@ -234,7 +234,7 @@ export default defineConfig({
 | `--target <パス>`／`-Target <パス>` | 入れる先（git の作業場所の直下）。直下でなければ止まる |
 | `--dry-run`／`-DryRun` | 写すファイルと、ぶつかるファイルを出すだけ。何も書かない（`Result: PASS (DryRun・何も書いていない)`） |
 | （なし） | 初めて入れる。既にあるファイルは上書きしない。利用先が手を入れる物（Node 版 `CLAUDE.md`、Unity 版 `CLAUDE.md`・`.gitignore`・`.gitattributes`）が既にあれば、それは残し、キットの物を `CLAUDE.kit.md`・`.gitignore.kit` のように横に置いて残りを入れる（`Result: PASS (… 件を写した・横に置いた N 件 …)`）。ほかに中身の違うファイルがあれば、何も書かずに一覧を出して `Result: FAIL (ぶつかる N 件)` |
-| `--update`／`-Update` | 入っている版を上げる。利用先が手を入れるファイル（`CLAUDE.md` など）は上書きしない |
+| `--update`／`-Update` | 入っている版を上げる。利用先が手を入れるファイル（`CLAUDE.md` など）は上書きせずに残し、その一覧と最後の行の「残した N 件」で知らせる（`Result: PASS (… 件を写した・残した N 件 …)`）。残した物はキットの物と比べて要る所を足す（Claude Code に頼める）。ほかのファイルは、手を入れていても上げる（上書きする） |
 
 ```text
 入れて
