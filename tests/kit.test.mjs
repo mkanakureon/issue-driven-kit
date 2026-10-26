@@ -16,6 +16,13 @@ import { createHash } from 'node:crypto';
 const kit = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(kit, p), 'utf8').replace(/^﻿/, '').replace(/\r/g, '');
 const hasPwsh = process.platform === 'win32' && spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0']).status === 0;
+// pwsh そのものが落ちた（試験を並べて回すと、まれに「Fatal error. Internal CLR error.」・0xC0000005 で落ちる）ときだけ、2 回までやり直す。脚本の結果は見ない
+const pwshCrashed = (r) => r.status === 0xC0000005 || /Internal CLR error/.test(`${r.stdout ?? ''}${r.stderr ?? ''}`);
+function pwsh(args, opts) {
+  let r = spawnSync('pwsh', args, opts);
+  for (let i = 0; i < 2 && pwshCrashed(r); i++) r = spawnSync('pwsh', args, opts);
+  return r;
+}
 
 const unityFiles = [
   'CLAUDE.md',
@@ -77,13 +84,13 @@ test('見本の答えの形', () => {
 });
 
 test('K-3（Unity 側）Unity 版の読み取りが見本を答えどおりに読む', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
-  const r = spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'tests/unity/read-fixtures.ps1')], { encoding: 'utf8' });
+  const r = pwsh(['-NoProfile', '-File', join(kit, 'tests/unity/read-fixtures.ps1')], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /Result: PASS/);
 });
 
 test('K-3（Unity 側）Node 版の見本の確認コマンドを読まない', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
-  const r = spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'tests/unity/read-fixtures.ps1'), '-Fixtures', 'issues-node'], { encoding: 'utf8' });
+  const r = pwsh(['-NoProfile', '-File', join(kit, 'tests/unity/read-fixtures.ps1'), '-Fixtures', 'issues-node'], { encoding: 'utf8' });
   assert.equal(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /Result: PASS/);
 });
@@ -93,10 +100,10 @@ test('K-4 Unity 版を入れると参照と同じ物ができる', { skip: (!has
   const dir = mkdtempSync(join(tmpdir(), 'kit-unity-'));
   try {
     assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
-    const dry = spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, '-DryRun'], { encoding: 'utf8' });
+    const dry = pwsh(['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, '-DryRun'], { encoding: 'utf8' });
     assert.equal(dry.status, 0, dry.stdout + dry.stderr);
     assert.ok(!existsSync(join(dir, 'CLAUDE.md')), 'DryRun なのに書いた');
-    const r = spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir], { encoding: 'utf8' });
+    const r = pwsh(['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir], { encoding: 'utf8' });
     assert.equal(r.status, 0, r.stdout + r.stderr);
     // 公開の写しは、PC の中のパス（C:\Users\<名前>\）だけ <you> に伏せてある（shared/SOURCE.md）。参照も同じに伏せてから比べる
     const mask = (t) => t.replace(/C:\\Users\\[^\\<>\s]+\\/g, 'C:\\Users\\<you>\\').replace(/C:\/Users\/[^/<>\s]+\//g, 'C:/Users/<you>/').replace(/`c\/Users\/[^/<>\s]+\//g, '`c/Users/<you>/');
@@ -108,7 +115,7 @@ test('K-4 Unity 版を入れると参照と同じ物ができる', { skip: (!has
     const v = JSON.parse(readFileSync(join(dir, '.issue-kit/version'), 'utf8'));
     assert.equal(v.edition, 'unity');
     // もう一度入れると、全部「同じ」で何も書かない
-    const again = spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir], { encoding: 'utf8' });
+    const again = pwsh(['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir], { encoding: 'utf8' });
     assert.equal(again.status, 0, again.stdout + again.stderr);
     assert.match(again.stdout, /Result: PASS \(0 件を写した/);
   } finally {
@@ -118,7 +125,7 @@ test('K-4 Unity 版を入れると参照と同じ物ができる', { skip: (!has
 
 test('入れる脚本（Unity 版）: 既にある CLAUDE.md・.gitignore は残し、横に .kit を置いて残りを入れる', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'kit-unity-aside-'));
-  const inst = (...args) => spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
+  const inst = (...args) => pwsh(['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
   const files = join(kit, 'editions/unity/files');
   try {
     assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
