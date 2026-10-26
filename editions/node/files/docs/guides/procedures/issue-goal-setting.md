@@ -116,7 +116,7 @@ done();
 
 ### 4.3 テストの重さ
 
-- vitest の単体の試験は速い（数秒）。HTTP と DB を通す試験（Workers なら `@cloudflare/vitest-pool-workers`）は、起動に数秒〜十数秒かかる。確認コマンドの中で `runTests()` を何度も呼ばず、1 回回してから `requireTests` で名前を見る。
+- vitest の単体の試験は速い（数秒）。HTTP と DB を通す試験（Workers なら `@cloudflare/vitest-plugin`）は、起動に数秒〜十数秒かかる。確認コマンドの中で `runTests()` を何度も呼ばず、1 回回してから `requireTests` で名前を見る。
 - **コメントだけの変更**（頭書き・説明）はテストを回さない。「変えたのはコメントの行だけ」を `git diff` で確かめる。
 - デプロイ（`wrangler deploy` など）を確認コマンドに入れない（無人の回では断られる）。
 

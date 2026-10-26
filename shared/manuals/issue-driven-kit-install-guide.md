@@ -91,9 +91,19 @@ npm install -g npm@11.6.2                                       # Node 版だけ
 
 ```bash
 brew install gh
-# Node.js 22.14.0 は公式の配布（https://nodejs.org/dist/v22.14.0/）か、版を選べる道具（nvm など）で入れる
+# Node.js 22.14.0 は公式の .pkg（https://nodejs.org/dist/v22.14.0/node-v22.14.0.pkg）で入れる（PATH が自動で通る）
 npm install -g npm@11.6.2
 ```
+
+Node.js は**公式の `.pkg` を推します**。入れると `/usr/local/bin` に `node` と `npm` が入り、PATH を足す手順が要りません。
+
+tar.gz を広げて入れたとき・nvm などで入れたときは、PATH が通っていません。**人が** `~/.zprofile` に次の 1 行を足し、新しいターミナルで `node --version` が `v22.14.0` になるのを見ます（`<入れた所>` は広げたフォルダー）。
+
+```bash
+export PATH="$HOME/<入れた所>/bin:$PATH"
+```
+
+この追記は Claude Code に頼みません。`~/.zprofile` は人のシェルの設定のファイルなので、Claude Code の auto mode は追記を断ります（断るのが正しい動きです）。
 
 入れるのを Claude Code に頼むこともできます（キットの元の作者は「pwshを入れて」「いれて」と入力しました）。
 
@@ -103,17 +113,19 @@ GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.6.2 にして
 
 ### 1.3 ログイン（人がする）
 
-ブラウザで承認する操作は、人が `!` を付けて入力します（`!` で始めると、その窓で人のコマンドとして実行されます）。
+GitHub のログインは、人が `!` を付けて入力します（`!` で始めると、その窓で人のコマンドとして実行されます）。
 
 ```text
 ! gh auth login
 ```
 
+無人の回用の長いトークンは、**Claude Code の外のターミナル**（Windows はもう 1 つの PowerShell、Mac はターミナル）で作ります。`!` を付けて Claude Code の中で回すと、端末（TTY）が無く標準入力が空のまま動くので、ブラウザで承認した後で止まり、トークンが出ません。
+
 ```text
-! claude setup-token
+claude setup-token
 ```
 
-`claude setup-token` で出た値を、環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れます。無人の回が長く動く途中でログインが切れるのを防ぎます。
+出た値は秘密の値です。**会話に貼らない**で、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れます（Windows はユーザーの環境変数、Mac は `~/.zshrc` などに `export`）。新しい窓を開いてから使います。無人の回が長く動く途中でログインが切れるのを防ぎます。
 
 ---
 
@@ -195,8 +207,25 @@ gh repo clone <アカウント>/<名前>
 |---|---|
 | 1 | 入れる脚本を `--dry-run`（Unity 版は `-DryRun`）で実行し、写すファイルの一覧と、既にあるファイルとぶつかる所を見せる。ここで止まる |
 | 2 | 人が「入れて」と入力したら、入れる脚本を本番で実行する。既にあるファイルは上書きしない |
-| 3 | **Node 版だけ**：vitest（と、Cloudflare Workers のプロジェクトなら `@cloudflare/vitest-pool-workers`）を `devDependencies` に足し、`npm test` が `scripts/test.mjs` を呼ぶようにする。`package.json` の `engines` と `.nvmrc` に Node.js の版を書く。版の組み合わせは公式の案内で確かめて固定する（入れる脚本はパッケージを足さない） |
+| 3 | **Node 版だけ**：vitest（と、Cloudflare Workers のプロジェクトなら `@cloudflare/vitest-plugin`。旧 `@cloudflare/vitest-pool-workers` は非推奨）を `devDependencies` に足し、`npm test` が `scripts/test.mjs` を呼ぶようにする。`package.json` の `engines` と `.nvmrc` に Node.js の版を書く。版の組み合わせは公式の案内で確かめて固定する（Mac では vitest 5.0.3・`@cloudflare/vitest-plugin` 1.4.0 で通った。入れる脚本はパッケージを足さない） |
 | 4 | `CLAUDE.md` の「プロジェクト」「コマンド」を、このリポジトリに合わせて書く（何を作るか・使う技術・テストの打ち方）。入れる脚本が `CLAUDE.kit.md` などを横に置いたときは、先にその中身を既にある物に足して、横に置いた物を消す |
+
+Cloudflare Workers のプロジェクトでは、`vitest.config.ts` で `@cloudflare/vitest-plugin` の `cloudflareTest` を使い、`wrangler.jsonc` を読ませます（Cloudflare の公式の案内「Write your first test」の書き方）。
+
+```ts
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [
+    cloudflareTest({
+      wrangler: { configPath: "./wrangler.jsonc" },
+    }),
+  ],
+});
+```
+
+`wrangler.jsonc` の `compatibility_date` が新しすぎるとテストが 1 本も回りません（「[困ったとき](#困ったとき)」）。
 
 入れる脚本は、ファイルを写すほかに、人の入力の置き場と記録の置き場（Node 版 `docs/inspecs/`・`docs/reports/`、Unity 版 `Docs/InSpecs/`・`Docs/Reports/`）を無ければ作り（中に `.gitkeep`）、`.issue-kit/version` を書きます。Node 版は `.gitignore` に `.issue-run/` の 1 行を足します。どちらも最後の行が `Result: PASS`／`Result: FAIL` です。
 
@@ -437,6 +466,7 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 | 実装の Issue が全部「設定を変えた」で落ちる | テストを初めて回したときにツールがファイルを作った | 実装の Issue を作る前に確認コマンドを 1 回回し、増えたファイルを先にコミットする |
 | Windows で無人の回の途中で止まった | PC が眠った | 「電源とスリープ」で、電源につないでいる間は眠らないようにする |
 | Mac で日本語が化ける・コマンドが見つからない | シェルの設定 | `node --version`・`gh --version`・`claude --version` が新しいターミナルで出るか確かめる |
+| Workers の試験が `ERR_RUNTIME_FAILURE` で 1 本も回らず、テストの入口が `Result: FAIL (0/1)` になる | `@cloudflare/vitest-plugin` の workerd が受け付ける `compatibility_date` には上限がある（1.4.0 は 2026-10-13）。`wrangler.jsonc` の `compatibility_date` がそれより新しい（今日の日付など） | `wrangler.jsonc` の `compatibility_date` を上限以下の日付にする。上限は vitest-plugin の版ごとに違うので、入れた版で確かめる |
 
 ---
 
@@ -445,7 +475,8 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 | 手順 | プロンプト |
 |---|---|
 | 1 | `GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.6.2 にして` |
-| 1 | `! gh auth login`・`! claude setup-token`（人が入力） |
+| 1 | `! gh auth login`（人が入力） |
+| 1 | Claude Code の外のターミナルで `claude setup-token`（人が回す。出た値は会話に貼らないで、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れる） |
 | 3A | `GitHub に private のリポジトリ <名前> を作って、ここに clone して` |
 | 3A | `このリポジトリを Node.js 22.14.0・npm 11.6.2・TypeScript・vitest の最小のプロジェクトにして。…コミットはまだしないで` |
 | 4 | `<キット> の導入ガイドを読んで、このリポジトリに <Node 版／Unity 版> を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` |
@@ -521,7 +552,7 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 |---|---|---|
 | 1 | `gh repo clone mkanakureon/rpg-online-cloudflare` → そのフォルダーで `claude` | — |
 | 2 | `~/work/issue-driven-kit の導入ガイドを読んで、このリポジトリに Node 版を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` | 既にある `docs/` の 6 本と `docs/adr/`、`scripts/cli-mock.mjs` は触らない（キットは `docs/guides/`・`docs/reports/`・`scripts/issue-run/` に入る） |
-| 3 | `入れて` | vitest と `@cloudflare/vitest-pool-workers` が足される。`engines` を `22.14.0` に、`.nvmrc` を足す |
+| 3 | `入れて` | vitest と `@cloudflare/vitest-plugin` が足される。`engines` を `22.14.0` に、`.nvmrc` を足す |
 | 4 | `CLAUDE.md の守るものに、README の「無認証 API のデプロイは行わない」を入れて。wrangler deploy は無人の回でも断るようにして` | キットの Node 版は `wrangler deploy` を断る設定を持つ（基本設計 4.3） |
 | 5 | 手順 5 の確かめ | Mac で回す。Windows でも回せる |
 | 6 | `docs/03-roadmap.md の「優先的にテストする失敗ケース」8 つを、試験の名前の表にしたテスト計画を書かせる Issue にして` → `コミットしてpushしてから作って` | 基本設計 D6 の 1 件目。続けて正常系の試験・スコア投稿の異常系の試験 |

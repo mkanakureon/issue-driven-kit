@@ -50,7 +50,7 @@ npm のパッケージを使わず Node.js の組み込みの試験（`node:test
 | 何を | どこ |
 | --- | --- |
 | ふつうの関数のロジック（速い・まずここ） | `test/` か、コードの隣の `*.test.ts`（`vitest.config.ts` の `include` に合わせる） |
-| HTTP・DB を通す試験（Cloudflare Workers なら `@cloudflare/vitest-pool-workers`） | 同上。設定は `vitest.config.ts`。分けた環境で動くので、開発用のローカルの DB（`.wrangler/`）とは取り合わない |
+| HTTP・DB を通す試験（Cloudflare Workers なら `@cloudflare/vitest-plugin`） | 同上。設定は `vitest.config.ts`。分けた環境で動くので、開発用のローカルの DB（`.wrangler/`）とは取り合わない |
 
 - テストの名前（`it('…')` の文）は、確認コマンドの `requireTests` で名指しされることがある。**名前を変えるときは、それを名指ししている Issue や設計書の表も同じときに直す**。
 - 名前は「何をすると・どうなる」が分かる日本語でよい（例: `スコアがマイナスなら 400 を返す`）。

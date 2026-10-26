@@ -200,7 +200,7 @@ flowchart TB
 |---|---|---|---|---|
 | D1 | キットを置く場所 | **決定：新しいリポジトリ `mkanakureon/issue-driven-kit`**（初めは private。2026-10-23 ユーザー「キット　は公開リポジトリにする」で**公開（MIT）**にした。公開は 1 コミットのきれいな履歴から始め、開発の途中の履歴は private の `issue-driven-kit-dev` に残す）。利用先には写しを入れ、元のコミットを `.issue-kit/version` に残す | このリポジトリの中／利用先に直接 | 共有の部品を 1 か所に保つ。古い写しに気づける |
 | D2 | 脚本の言語 | **決定（2026-10-23 ユーザー）：Unity 版は PowerShell（Windows）、Node 版は Node.js だけ（PowerShell を使わない）** | — | 利用先の技術に合わせる。Node 版の利用者に PowerShell を入れさせない |
-| D3 | Node 版のテスト | **決定：vitest。Worker の試験は `@cloudflare/vitest-pool-workers`**。版の組み合わせは入れるときに公式の案内で確かめ、固定する | 素の vitest だけ | ロードマップの失敗ケースは Worker と D1 を通して試すのが本物に近い |
+| D3 | Node 版のテスト | **決定：vitest。Worker の試験は `@cloudflare/vitest-plugin`**。版の組み合わせは入れるときに公式の案内で確かめ、固定する | 素の vitest だけ | ロードマップの失敗ケースは Worker と D1 を通して試すのが本物に近い |
 | D4 | Node 版の置き場の名前 | **決定：利用先に合わせて小文字**。脚本は `scripts/issue-run/`、文書は `docs/guides/`・`docs/reports/`・`docs/inspecs/`、ログは `.issue-run/logs/`（git に入れない）。既存の `docs/` の 6 本と `docs/adr/` は触らない | Unity 版と同じ大文字 | 大文字と小文字の問題（5 章）。既存の置き方を壊さない |
 | D5 | Node 版の使用中の判定 | **決定：使用中にしない**（`wrangler dev` が動いていれば知らせだけ） | 8787 番が使われていれば BLOCKED | vitest の Workers の試験は分けた環境で動く（入れるときに確かめる） |
 | D6 | 最初の Issue（rpg-online-cloudflare） | **決定：文書 1 件 → 試験 2 件**。1：テスト計画（ロードマップの失敗ケース 8 つを試験の名前の表に）。2：`/health` と `GET` の正常系。3：スコア投稿の異常系 | いきなり実装 | このリポジトリの #1〜#3 と同じく、仕組みの確かめと中身の失敗を混ぜない |
@@ -255,7 +255,7 @@ K2 で仕様を 1 か所直した：Node 版の確認コマンドは、記録と
 | 2 つの版の無人の回が、だんだん違う動きになる | 決まりは仕様の正に 1 回だけ書く。共有の見本（K-3）を、どちらかを変えるたびに両方で回す |
 | Node 版の無人の回は、まだ一度も動いていない新しい実装 | Unity 版で動いた 655 行を、仕様の正と見本で 1 つずつ写す。K-7 が通るまで「動いた」と言わない |
 | Mac で一度も動かしていない | K-6・K-7 を人が Mac で確かめるまで「両対応」と言わない（原則 4） |
-| `@cloudflare/vitest-pool-workers` と vitest の版の組み合わせ | K4 で入れるときに公式の案内で確かめて固定する |
+| `@cloudflare/vitest-plugin` と vitest の版の組み合わせ | K4 で入れるときに公式の案内で確かめて固定する（Mac では vitest 5.0.3・`@cloudflare/vitest-plugin` 1.4.0 で通った。workerd が受け付ける `compatibility_date` には版ごとの上限がある） |
 | 利用先は「無認証 API をデプロイしない」リポジトリ | Node 版の指示文と禁止の設定で `wrangler deploy` を断る |
 | 写しが古くなる | `.issue-kit/version`。点検でキットの最新と比べて知らせる |
 | Windows で長く回す間に眠る | 点検で電源の設定を知らせる（D10） |

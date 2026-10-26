@@ -3,15 +3,15 @@
   "title": "テストのしくみを入れる: vitest と Workers の試験環境・npm test をテストの入口に・最初の試験（GET /health）",
   "edition": "node",
   "items": [
-    "- `devDependencies` に `vitest` と `@cloudflare/vitest-pool-workers` があり、どちらも版を固定している（`^`・`~` を付けない）。版の組み合わせは公式の案内で確かめる",
+    "- `devDependencies` に `vitest` と `@cloudflare/vitest-plugin` があり、どちらも版を固定している（`^`・`~` を付けない）。版の組み合わせは公式の案内で確かめる",
     "- `package.json` の `scripts.test` が `node scripts/test.mjs` を呼ぶ。`.nvmrc` が `22.14.0`",
-    "- テスト「GET /health が 200 と ok を返す」があり、Workers の実行環境（`@cloudflare/vitest-pool-workers`）で `src/worker.ts` を呼んで通る",
+    "- テスト「GET /health が 200 と ok を返す」があり、Workers の実行環境（`@cloudflare/vitest-plugin`）で `src/worker.ts` を呼んで通る",
     "- `node scripts/test.mjs` の最後の行が `Result: PASS`",
     "- 点検 `node scripts/issue-run/doctor.mjs` に `NG` の行が無い",
     "- `src/worker.ts` と `migrations/` を変えていない"
   ],
   "checkLang": "js",
-  "check": "// 守る: src/worker.ts\n// 守る: migrations/0001_initial.sql\nimport { readFileSync, existsSync } from 'node:fs';\nimport { spawnSync } from 'node:child_process';\nimport { runTests, requireTests, check, gitClean, done } from './scripts/issue-run/check-lib.mjs';\n\n// パッケージの設定のファイルはこの Issue で直すので、名前を分けて組み立てて指す（パスをそのまま書くと、注釈の中でも守るファイルになり、直せなくなる）\nconst pkgFile = ['package', 'json'].join('.');\nconst pkg = JSON.parse(readFileSync(pkgFile, 'utf8'));\nconst dev = pkg.devDependencies ?? {};\nfor (const name of ['vitest', '@cloudflare/vitest-pool-workers']) {\n  check(!!dev[name], `devDependencies に ${name} がある`);\n  check(/^\\d+\\.\\d+\\.\\d+$/.test(dev[name] ?? ''), `${name} の版を固定している（いま: ${dev[name] ?? '無い'}）`);\n}\ncheck(/scripts\\/test\\.mjs/.test(pkg.scripts?.test ?? ''), `npm test が scripts/test.mjs を呼ぶ（いま: ${pkg.scripts?.test ?? '無い'}）`);\ncheck(existsSync('.nvmrc') && readFileSync('.nvmrc', 'utf8').trim() === '22.14.0', '.nvmrc が 22.14.0');\n\nrunTests();\nrequireTests(['GET /health が 200 と ok を返す']);\n\nconst doc = spawnSync(process.execPath, ['scripts/issue-run/doctor.mjs'], { encoding: 'utf8' });\nconst ngs = (doc.stdout ?? '').split(/\\r?\\n/).filter((l) => l.startsWith('NG '));\ncheck(ngs.length === 0, `点検に NG が無い${ngs.map((l) => `\\n    ${l}`).join('')}`);\n\ngitClean(['src/worker.ts', 'migrations/']);\ndone();",
+  "check": "// 守る: src/worker.ts\n// 守る: migrations/0001_initial.sql\nimport { readFileSync, existsSync } from 'node:fs';\nimport { spawnSync } from 'node:child_process';\nimport { runTests, requireTests, check, gitClean, done } from './scripts/issue-run/check-lib.mjs';\n\n// パッケージの設定のファイルはこの Issue で直すので、名前を分けて組み立てて指す（パスをそのまま書くと、注釈の中でも守るファイルになり、直せなくなる）\nconst pkgFile = ['package', 'json'].join('.');\nconst pkg = JSON.parse(readFileSync(pkgFile, 'utf8'));\nconst dev = pkg.devDependencies ?? {};\nfor (const name of ['vitest', '@cloudflare/vitest-plugin']) {\n  check(!!dev[name], `devDependencies に ${name} がある`);\n  check(/^\\d+\\.\\d+\\.\\d+$/.test(dev[name] ?? ''), `${name} の版を固定している（いま: ${dev[name] ?? '無い'}）`);\n}\ncheck(/scripts\\/test\\.mjs/.test(pkg.scripts?.test ?? ''), `npm test が scripts/test.mjs を呼ぶ（いま: ${pkg.scripts?.test ?? '無い'}）`);\ncheck(existsSync('.nvmrc') && readFileSync('.nvmrc', 'utf8').trim() === '22.14.0', '.nvmrc が 22.14.0');\n\nrunTests();\nrequireTests(['GET /health が 200 と ok を返す']);\n\nconst doc = spawnSync(process.execPath, ['scripts/issue-run/doctor.mjs'], { encoding: 'utf8' });\nconst ngs = (doc.stdout ?? '').split(/\\r?\\n/).filter((l) => l.startsWith('NG '));\ncheck(ngs.length === 0, `点検に NG が無い${ngs.map((l) => `\\n    ${l}`).join('')}`);\n\ngitClean(['src/worker.ts', 'migrations/']);\ndone();",
   "prerequisites": [],
   "tracked": [
     "src/worker.ts",
