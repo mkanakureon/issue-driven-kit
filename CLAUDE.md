@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## プロジェクト
 
 - **Issue 駆動キット**：利用先のリポジトリに写す部品（`editions/unity/files/`・`editions/node/files/`）・入れる脚本・共有の仕様と見本と説明書（`shared/`）・キットの設計（`docs/design/`）・キット自身の試験（`tests/`）。
-- Node.js **22.14.0**（`.nvmrc`）・npm **11.4.2**。キットの試験は **`node --test`**（`tests/*.test.mjs`。npm のパッケージを使わない）。Unity 版の試験は Windows と PowerShell 7 があるときだけ回る。
+- Node.js **22.14.0**（`.nvmrc`）・npm **11.6.2**。キットの試験は **`node --test`**（`tests/*.test.mjs`。npm のパッケージを使わない）。Unity 版の試験は Windows と PowerShell 7 があるときだけ回る。
 - 脚本のロジックは外に触る所（子のプロセス・GitHub・ファイル）から外へ出し、ふつうの関数にする（`lib.mjs` のように。試験で速く確かめるため。design-cycle §2）。
 
 ## コマンド
