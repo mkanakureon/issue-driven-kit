@@ -221,6 +221,9 @@ pwsh -NoProfile -File Scripts\issue-run.ps1 -DryRun
 | キット | `26e0f85` |
 | 仮の利用先 | キットの `examples/node-sample` の写しを `git init` したもの（導入ガイド M3 の Windows 版） |
 
+> [!NOTE]
+> この節の出力は npm 11.4.2 のときのものです。いまの決めた版は **npm 11.6.2** です（11.4.2 では `npm install --save-dev vitest@4` が落ちるため上げました）。11.6.2 で回すと、N1 の `npm --version` と点検の行は `11.6.2` になります。
+
 ### N1 道具
 
 ```powershell

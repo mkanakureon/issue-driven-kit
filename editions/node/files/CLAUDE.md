@@ -9,7 +9,7 @@ Issue 駆動キット（Node 版）を入れた。入れた版は `.issue-kit/ve
 ## プロジェクト
 
 - <何を作るか。1〜3 行>
-- Node.js **22.14.0**（`.nvmrc`）・npm **11.4.2**・TypeScript・テストは **vitest**。<使うサービス（例: Cloudflare Workers・D1）>。
+- Node.js **22.14.0**（`.nvmrc`）・npm **11.6.2**・TypeScript・テストは **vitest**。<使うサービス（例: Cloudflare Workers・D1）>。
 - ロジックは入出力（HTTP・DB）から外へ出し、ふつうの関数にする（単体の試験で速く確かめるため。design-cycle §2）。
 
 ## コマンド

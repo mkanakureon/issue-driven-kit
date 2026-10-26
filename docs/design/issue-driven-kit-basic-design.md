@@ -96,7 +96,7 @@ flowchart TB
 | 選ぶ版 | 向いているリポジトリ | 動く OS | 要る道具 | 入れ方 |
 |---|---|---|---|---|
 | **Unity 版** | Unity のプロジェクト | Windows | Claude Code・git・gh・PowerShell 7・Unity | `pwsh editions\unity\install.ps1 -Target <リポジトリ>` |
-| **Node 版** | Node.js＋TypeScript のプロジェクト（テストは vitest） | Windows・Mac | Claude Code・git・gh・Node.js 22.14.0／npm 11.4.2 | `node editions/node/install.mjs --target <リポジトリ>` |
+| **Node 版** | Node.js＋TypeScript のプロジェクト（テストは vitest） | Windows・Mac | Claude Code・git・gh・Node.js 22.14.0／npm 11.6.2 | `node editions/node/install.mjs --target <リポジトリ>` |
 
 入れる脚本は、選んだ版の物だけを写す。もう片方の版の脚本は利用先に入らない（Node 版の利用先に `.ps1` が 1 本も入らない＝K-2）。
 
@@ -204,7 +204,7 @@ flowchart TB
 | D4 | Node 版の置き場の名前 | **決定：利用先に合わせて小文字**。脚本は `scripts/issue-run/`、文書は `docs/guides/`・`docs/reports/`・`docs/inspecs/`、ログは `.issue-run/logs/`（git に入れない）。既存の `docs/` の 6 本と `docs/adr/` は触らない | Unity 版と同じ大文字 | 大文字と小文字の問題（5 章）。既存の置き方を壊さない |
 | D5 | Node 版の使用中の判定 | **決定：使用中にしない**（`wrangler dev` が動いていれば知らせだけ） | 8787 番が使われていれば BLOCKED | vitest の Workers の試験は分けた環境で動く（入れるときに確かめる） |
 | D6 | 最初の Issue（rpg-online-cloudflare） | **決定：文書 1 件 → 試験 2 件**。1：テスト計画（ロードマップの失敗ケース 8 つを試験の名前の表に）。2：`/health` と `GET` の正常系。3：スコア投稿の異常系 | いきなり実装 | このリポジトリの #1〜#3 と同じく、仕組みの確かめと中身の失敗を混ぜない |
-| D7 | Node.js と npm の版 | **決定（2026-10-23 ユーザー）：Node.js 22.14.0・npm 11.4.2**。この PC には入れた。Mac も同じ版にする。利用先の `package.json` の `engines` と `.nvmrc` に書く | — | 両方の OS を同じ版で確かめる |
+| D7 | Node.js と npm の版 | **決定：Node.js 22.14.0（2026-10-23 ユーザー）・npm 11.6.2（2026-10-26、Issue #5）**。npm は 11.4.2 では `npm install --save-dev vitest@4` が `edgesOut` の誤りで落ち、11.6.2 では通る（Windows・Mac で確かめた）ので上げた。Windows と Mac を同じ版にする。利用先の `package.json` の `engines` と `.nvmrc` に書く | — | 両方の OS を同じ版で確かめる |
 | D8 | 作る順 | **決定：K1〜K4 は会話の中で作り、K5（最初の Issue）から利用先で Issue 駆動** | 全部会話／全部 Issue | キットが入る前は無人の回が無い |
 | D9 | Node 版の確認コマンドの書き方 | **決定：```` ```js ```` の塊（ES モジュール）**。無人の回が一時ファイル（`.issue-run/logs/<回>/check-<番号>.mjs`）に書いて `node` で回し、終了コード 0 で合格。守るファイルは `// 守る: <パス>`。手伝いは `check-lib.mjs` から読み込む | ```` ```sh ````（Mac と Windows で書き方が変わる）／`npm run` の名前だけ書く（Issue ごとの確かめが書けない） | Windows と Mac で同じに動く。いまの ```` ```pwsh ```` と同じ「本文に確かめを全部書く」形を保てる |
 | D10 | 長く回す間、PC を眠らせない | **決定：Mac は `caffeinate -i -w <PID>`。Windows は Node だけでは止められないので、点検で「電源とスリープ」の設定を知らせる** | Windows だけ PowerShell を呼ぶ（D2 に反する） | D2 を守る |
@@ -243,7 +243,7 @@ K2 で仕様を 1 か所直した：Node 版の確認コマンドは、記録と
 |---|---|---|
 | D1 の了承の後 | キットのリポジトリを作ってよいか（「作って」） | GitHub にリポジトリを作る |
 | K4 | 利用先へのブランチの push・PR | push |
-| K4・K5 | **Mac で**：Node.js 22.14.0・npm 11.4.2 にそろえる・`brew install gh`・`gh auth login`・`claude setup-token`・点検・無人の回の起動（**PowerShell は要らない**） | — |
+| K4・K5 | **Mac で**：Node.js 22.14.0・npm 11.6.2 にそろえる・`brew install gh`・`gh auth login`・`claude setup-token`・点検・無人の回の起動（**PowerShell は要らない**） | — |
 | K6 | 公開するなら、事例の中の個人の情報を確かめる | — |
 
 ---

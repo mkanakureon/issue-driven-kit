@@ -13,14 +13,14 @@ project: issue-driven-kit
 
 ## 確かめた版
 
-このガイドのコマンドと出力は、次の版で回して確かめました（2026-10-23）。
+このガイドのコマンドと出力は、次の版で回して確かめました（Windows は 2026-10-23。Mac は #3 で確かめた結果）。
 
 | 道具・OS | 版 | 確かめたこと |
 |---|---|---|
 | OS | **Windows 11**（Home 10.0.26200） | Node 版：キットの試験・入れる脚本・テストの入口（見本のプロジェクト）・点検・DryRun。Unity 版：KaedeScapeBuii で Issue 13 件が合格、空のフォルダーに入れて入れる脚本・テストの入口（Unity 6000.6.6f1）・点検・DryRun。手順と出力は版ごとに「[Windows で確かめる（Unity 版）](issue-driven-kit-windows-check.md#windows-で確かめるunity-版)」「[Windows で確かめる（Node 版）](issue-driven-kit-windows-check.md#windows-で確かめるnode-版)」 |
-| OS | **Mac** | **まだ確かめていません。** 人が「[Mac で確かめる](#mac-で確かめる)」の手順で回し、結果をこの表に書き足します |
+| OS | **Mac**（macOS 15.8.1 arm64） | Node 版：入れる脚本・テストの入口・点検・DryRun・無人の回で Issue 4 件が 1 回目で合格（Node.js 22.14.0・npm 11.6.2・git 2.39.5・gh 2.103.0・Claude Code 2.1.309） |
 | Node.js | 22.14.0 | `node --version` → `v22.14.0` |
-| npm | 11.4.2 | `npm --version` → `11.4.2` |
+| npm | 11.6.2 | `npm --version` → `11.6.2` |
 | Claude Code | 2.1.309 | `claude --version` → `2.1.309 (Claude Code)` |
 | GitHub CLI | 2.103.0 | `gh --version` |
 | git | 2.55.0（Windows） | `git --version` |
@@ -57,7 +57,7 @@ flowchart LR
 | テストの入口 | `Scripts/unity-test.ps1` | `scripts/test.mjs`（`npm test`） |
 | 置き場の名前 | `Scripts/`・`Docs/` | `scripts/`・`docs/`（小文字） |
 | 実際に動いた例 | KaedeScapeBuii（Issue 13 件が全部合格） | キット自身（Node 版を入れて、キットを Issue 駆動で作っている・Windows）。最初の利用先 `rpg-online-cloudflare` はこれから |
-| 確かめた OS | Windows | Windows（Mac は人が「[Mac で確かめる](#mac-で確かめる)」で確かめる） |
+| 確かめた OS | Windows | Windows・Mac（macOS 15.8.1。手順は「[Mac で確かめる](#mac-で確かめる)」） |
 
 どちらにも合わない技術（Python・Go など）は、いまは Node 版を元に手で直す形になります（[`issue-driven-repo-setup.md`](issue-driven-repo-setup.md)）。
 
@@ -73,7 +73,7 @@ flowchart LR
 | git | 要る | 要る | `git --version` |
 | GitHub CLI（ログイン済み） | 要る | 要る | `gh auth status` |
 | PowerShell 7 | 要る | **要らない** | `pwsh --version` |
-| Node.js **22.14.0**・npm **11.4.2** | 要らない | 要る | `node --version`・`npm --version` |
+| Node.js **22.14.0**・npm **11.6.2** | 要らない | 要る | `node --version`・`npm --version` |
 | Unity | 要る | 要らない | Unity Hub |
 
 ### 1.2 入れ方
@@ -84,7 +84,7 @@ flowchart LR
 winget install --id GitHub.cli -e
 winget install --id Microsoft.PowerShell -e                     # Unity 版だけ
 winget install --id OpenJS.NodeJS.22 --version 22.14.0 -e       # Node 版だけ
-npm install -g npm@11.4.2                                       # Node 版だけ
+npm install -g npm@11.6.2                                       # Node 版だけ
 ```
 
 **Mac**（Node 版だけ）
@@ -92,13 +92,13 @@ npm install -g npm@11.4.2                                       # Node 版だけ
 ```bash
 brew install gh
 # Node.js 22.14.0 は公式の配布（https://nodejs.org/dist/v22.14.0/）か、版を選べる道具（nvm など）で入れる
-npm install -g npm@11.4.2
+npm install -g npm@11.6.2
 ```
 
 入れるのを Claude Code に頼むこともできます（キットの元の作者は「pwshを入れて」「いれて」と入力しました）。
 
 ```text
-GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.4.2 にして
+GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.6.2 にして
 ```
 
 ### 1.3 ログイン（人がする）
@@ -148,7 +148,7 @@ GitHub に private のリポジトリ <名前> を作って、ここに clone �
 **Node 版**なら、続けて中身の最初の形を作ります。clone したフォルダーで Claude Code を起動し直してから入力します。
 
 ```text
-このリポジトリを Node.js 22.14.0・npm 11.4.2・TypeScript・vitest の最小のプロジェクトにして。
+このリポジトリを Node.js 22.14.0・npm 11.6.2・TypeScript・vitest の最小のプロジェクトにして。
 package.json の engines と .nvmrc に版を書いて、テストを 1 本だけ（足し算くらいで）入れて、npm test が通るようにして。
 コミットはまだしないで
 ```
@@ -334,7 +334,7 @@ pwsh Scripts\issue-run.ps1
 
 ## Mac で確かめる
 
-Node 版は Windows で確かめました。Mac では**人が**次の順に回し、期待する出力と同じかを見ます（基本設計の K-6・K-7。Claude Code に回させてもかまいませんが、結果は人が読みます）。結果は「[確かめた版](#確かめた版)」の表に、版と日付と一緒に書き足します。
+Node 版は Windows と Mac（macOS 15.8.1）で確かめました。ほかの Mac では**人が**次の順に回し、期待する出力と同じかを見ます（基本設計の K-6・K-7。Claude Code に回させてもかまいませんが、結果は人が読みます）。結果は「[確かめた版](#確かめた版)」の表に、版と日付と一緒に書き足します。
 
 ### M1 道具
 
@@ -351,7 +351,7 @@ claude --version
 |---|---|
 | `sw_vers -productVersion` | Mac の版（表に書き足す） |
 | `node --version` | `v22.14.0` |
-| `npm --version` | `11.4.2` |
+| `npm --version` | `11.6.2` |
 | `gh auth status` | `Logged in to github.com` を含み、終了コード 0 |
 | `claude --version` | `<版> (Claude Code)`（表に書き足す） |
 
@@ -443,10 +443,10 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 
 | 手順 | プロンプト |
 |---|---|
-| 1 | `GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.4.2 にして` |
+| 1 | `GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.6.2 にして` |
 | 1 | `! gh auth login`・`! claude setup-token`（人が入力） |
 | 3A | `GitHub に private のリポジトリ <名前> を作って、ここに clone して` |
-| 3A | `このリポジトリを Node.js 22.14.0・npm 11.4.2・TypeScript・vitest の最小のプロジェクトにして。…コミットはまだしないで` |
+| 3A | `このリポジトリを Node.js 22.14.0・npm 11.6.2・TypeScript・vitest の最小のプロジェクトにして。…コミットはまだしないで` |
 | 4 | `<キット> の導入ガイドを読んで、このリポジトリに <Node 版／Unity 版> を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` |
 | 4 | `入れて` |
 | 5 | `テストの入口を、全部・0 件・わざと落とすテストを 1 本足す、の 3 つで回して、最後の Result: 行と終了コードを見せて。わざと落とすテストは最後に消して` |

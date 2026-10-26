@@ -82,13 +82,13 @@ flowchart LR
 | 道具 | 版 | 入れ方（Windows ／ Mac） |
 |---|---|---|
 | Node.js | **22.14.0**（`.nvmrc`） | `winget install --id OpenJS.NodeJS.22 --version 22.14.0 -e` ／ 公式の配布か版を選べる道具 |
-| npm | **11.4.2** | `npm install -g npm@11.4.2`（どちらも） |
+| npm | **11.6.2** | `npm install -g npm@11.6.2`（どちらも） |
 | git | 新しいもの | `winget install --id Git.Git -e` ／ `xcode-select --install` |
 | GitHub CLI | 新しいもの | `winget install --id GitHub.cli -e` ／ `brew install gh` |
 | Claude Code | 新しいもの | https://code.claude.com の手順 |
 | 無人の回のモデル | `claude-opus-5-5` | `issue-run.mjs --model` の既定（対話の既定に引きずられない） |
 
-キットでは、Windows 11 で Node.js 22.14.0・npm 11.4.2 を使って確かめた。Mac での確かめは、このリポジトリで最初に回したときにここへ書き足す。
+キットでは、Windows 11 で Node.js 22.14.0 を使って確かめた（npm 11.6.2 で vitest 4 を足せることも確かめた）。Mac は macOS 15.8.1（arm64）で Node.js 22.14.0・npm 11.6.2・git 2.39.5・gh 2.103.0・Claude Code 2.1.309 を使って確かめた。npm を 11.6.2 にしたのは、前に決めた版では `npm install --save-dev vitest@4` が落ちるため。
 
 ### 6.2 ゼロからの手順
 
