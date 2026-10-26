@@ -112,7 +112,7 @@ pwsh -NoProfile -File C:\work\issue-driven-kit\editions\unity\install.ps1 -Targe
 | `合計 29 件: 写す 29` | |
 | 最後の行 `Result: PASS (DryRun・何も書いていない)` | 0 |
 
-既にあって中身の違うファイル（例：自分の `CLAUDE.md`・`.gitignore`）があると、その行が `new` でなくなり、U6 の本番が `Result: FAIL (ぶつかる N 件)`（終了コード 1）で止まります。そのときは「既にある CLAUDE.md に、キットの原則と入口を足して」と頼みます。
+自分の `CLAUDE.md`・`.gitignore`・`.gitattributes` が既にあると、その行が `aside   CLAUDE.md → CLAUDE.kit.md` のようになり、U6 の本番は既にある物を残してキットの物を横に置きます（`Result: PASS (… 件を写した・横に置いた N 件 …)`）。そのあと「CLAUDE.kit.md の原則と入口を、既にある CLAUDE.md に足して、CLAUDE.kit.md を消して」と頼みます。ほかに中身の違うファイルがあると、U6 の本番は何も書かずに `Result: FAIL (ぶつかる N 件)`（終了コード 1）で止まります。
 
 ### U6 本番
 
@@ -299,7 +299,7 @@ node C:\work\issue-driven-kit\editions\node\install.mjs --target . --dry-run
 | `合計 30 件: 写す 30` | |
 | 最後の行 `Result: PASS (DryRun・何も書いていない)` | 0 |
 
-既にあって中身の違うファイル（例：自分の `CLAUDE.md`）があると、N6 の本番が `Result: FAIL (ぶつかる N 件)`（終了コード 1）で止まります。そのときは「既にある CLAUDE.md に、キットの原則と入口を足して」と頼みます。
+自分の `CLAUDE.md` が既にあると、その行が `aside    CLAUDE.md → CLAUDE.kit.md` になり、N6 の本番は既にある物を残してキットの物を横に置きます（`Result: PASS (… 件を写した・横に置いた 1 件 …)`）。そのあと「CLAUDE.kit.md の原則と入口を、既にある CLAUDE.md に足して、CLAUDE.kit.md を消して」と頼みます。ほかに中身の違うファイル（例：自分の `scripts/test.mjs`）があると、N6 の本番は何も書かずに `Result: FAIL (ぶつかる N 件)`（終了コード 1）で止まります。
 
 ### N6 本番
 

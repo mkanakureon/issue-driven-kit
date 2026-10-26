@@ -2,7 +2,7 @@
 // install.mjs — Issue 駆動キットの Node 版を、利用先のリポジトリに写す（Windows・Mac・Node.js だけ）。
 // 約束の正: docs/design/issue-driven-kit-basic-design.md の 3.4。導入の手順: shared/manuals/issue-driven-kit-install-guide.md
 //   node editions/node/install.mjs --target <リポジトリ> --dry-run   # 写すファイルとぶつかるファイルを出すだけ
-//   node editions/node/install.mjs --target <リポジトリ>             # 初めて入れる（既にあるファイルは上書きしない）
+//   node editions/node/install.mjs --target <リポジトリ>             # 初めて入れる（既にあるファイルは上書きしない。CLAUDE.md がぶつかったらキットの物を CLAUDE.kit.md として横に置く）
 //   node editions/node/install.mjs --target <リポジトリ> --update    # 入っている版を上げる（利用先が手を入れるファイルは上書きしない）
 // 写すだけ。コミット・push・パッケージの追加はしない（vitest の追加は導入ガイドの手順 4 で Claude Code が行う）。最後の行が Result: PASS／FAIL。
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, statSync } from 'node:fs';
@@ -15,7 +15,7 @@ const EDITION = 'node';
 const here = dirname(fileURLToPath(import.meta.url));
 const kitRoot = resolve(here, '../..');
 const filesRoot = join(here, 'files');
-// 利用先が中身を書き足すファイル。--update でも上書きせず、差があれば知らせる
+// 利用先が中身を書き足すファイル。--update でも上書きせず、差があれば知らせる。初めて入れるときにぶつかったら、キットの物を .kit の名前で横に置く
 const USER_OWNED = ['CLAUDE.md'];
 // 写した後に作る空の置き場（.gitkeep を置く）
 const EMPTY_DIRS = ['docs/inspecs', 'docs/reports'];
@@ -40,6 +40,11 @@ if (resolve(target).toLowerCase() !== targetRoot.toLowerCase()) fail(`入れる�
 const walk = (d) => readdirSync(d, { withFileTypes: true }).flatMap((e) => e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)]);
 const files = walk(filesRoot).map((f) => relative(filesRoot, f).replaceAll('\\', '/')).sort();
 const hash = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
+// 横に置く名前: 拡張子の前に .kit（CLAUDE.md → CLAUDE.kit.md）。拡張子の無い名前・点で始まる名前は後ろに付ける（.gitignore → .gitignore.kit）
+const asideName = (rel) => {
+  const slash = rel.lastIndexOf('/') + 1, dot = rel.lastIndexOf('.');
+  return dot > slash ? `${rel.slice(0, dot)}.kit${rel.slice(dot)}` : `${rel}.kit`;
+};
 
 const plan = files.map((rel) => {
   const from = join(filesRoot, rel), to = join(targetRoot, rel);
@@ -48,12 +53,14 @@ const plan = files.map((rel) => {
   else if (hash(from) === hash(to)) state = 'same';
   else if (update && !USER_OWNED.includes(rel)) state = 'update';
   else if (update) state = 'keep';
+  else if (USER_OWNED.includes(rel)) state = 'aside';
   else state = 'conflict';
-  return { rel, from, to, state };
+  const aside = state === 'aside' ? asideName(rel) : undefined;
+  return { rel, from, to, state, aside, asideTo: aside && join(targetRoot, aside) };
 });
 
-const label = { new: '写す', same: '同じ', update: '上げる', keep: '残す（利用先が手を入れる物。差あり）', conflict: 'ぶつかる（既にあって中身が違う）' };
-for (const p of plan) console.log(`${p.state.padEnd(8)} ${p.rel}`);
+const label = { new: '写す', same: '同じ', update: '上げる', keep: '残す（利用先が手を入れる物。差あり）', aside: '横に置く（利用先が手を入れる物。既にある物は残す）', conflict: 'ぶつかる（既にあって中身が違う）' };
+for (const p of plan) console.log(`${p.state.padEnd(8)} ${p.rel}${p.aside ? ` → ${p.aside}` : ''}`);
 const gi = join(targetRoot, '.gitignore');
 const giText = existsSync(gi) ? readFileSync(gi, 'utf8') : '';
 const giMissing = GITIGNORE_LINES.filter((l) => !giText.split(/\r?\n/).map((x) => x.trim()).includes(l));
@@ -74,6 +81,11 @@ for (const p of plan.filter((x) => x.state === 'new' || x.state === 'update')) {
   mkdirSync(dirname(p.to), { recursive: true });
   copyFileSync(p.from, p.to);
 }
+// 横に置く物はキットの物なので、毎回キットの物にそろえる（中身が同じなら書かない）
+const asides = plan.filter((p) => p.state === 'aside');
+for (const p of asides) {
+  if (!existsSync(p.asideTo) || hash(p.asideTo) !== hash(p.from)) copyFileSync(p.from, p.asideTo);
+}
 for (const d of EMPTY_DIRS) {
   const full = join(targetRoot, d);
   if (!existsSync(full)) { mkdirSync(full, { recursive: true }); writeFileSync(join(full, '.gitkeep'), ''); }
@@ -90,5 +102,9 @@ mkdirSync(join(targetRoot, '.issue-kit'), { recursive: true });
 writeFileSync(join(targetRoot, '.issue-kit', 'version'), JSON.stringify(version, null, 2) + '\n', 'utf8');
 
 const written = plan.filter((p) => p.state === 'new' || p.state === 'update').length;
-console.log(`Result: PASS (${written} 件を写した・版 ${EDITION}・キット ${version.commit.slice(0, 8)}${dirty ? '（未コミットの変更あり）' : ''})`);
+if (asides.length) {
+  console.log('既にある物は残し、キットの物を横に置いた。既にある物にキットの物の中身を足してから、横に置いた物を消す（Claude Code に頼める）:');
+  asides.forEach((p) => console.log(`  ${p.aside}（${p.rel} に足す）`));
+}
+console.log(`Result: PASS (${written} 件を写した${asides.length ? `・横に置いた ${asides.length} 件` : ''}・版 ${EDITION}・キット ${version.commit.slice(0, 8)}${dirty ? '（未コミットの変更あり）' : ''})`);
 process.exit(0);

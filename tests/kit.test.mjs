@@ -6,7 +6,7 @@
 //   共有の決まり（原則・進め方の決まり）が、各版の CLAUDE.md にそのまま入っている
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync, readdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
@@ -111,6 +111,50 @@ test('K-4 Unity 版を入れると参照と同じ物ができる', { skip: (!has
     const again = spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir], { encoding: 'utf8' });
     assert.equal(again.status, 0, again.stdout + again.stderr);
     assert.match(again.stdout, /Result: PASS \(0 件を写した/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('入れる脚本（Unity 版）: 既にある CLAUDE.md・.gitignore は残し、横に .kit を置いて残りを入れる', { skip: !hasPwsh && 'Windows と pwsh が要る' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kit-unity-aside-'));
+  const inst = (...args) => spawnSync('pwsh', ['-NoProfile', '-File', join(kit, 'editions/unity/install.ps1'), '-Target', dir, ...args], { encoding: 'utf8' });
+  const files = join(kit, 'editions/unity/files');
+  try {
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    writeFileSync(join(dir, 'CLAUDE.md'), '# mine\n');
+    writeFileSync(join(dir, '.gitignore'), 'Library/\n');
+    // DryRun: 横に置く予定が出て、何も書かない
+    const dry = inst('-DryRun');
+    assert.equal(dry.status, 0, dry.stdout + dry.stderr);
+    assert.match(dry.stdout, /^aside +CLAUDE\.md → CLAUDE\.kit\.md$/m);
+    assert.match(dry.stdout, /^aside +\.gitignore → \.gitignore\.kit$/m);
+    assert.match(dry.stdout, /横に置く（[^）]*） 2/);
+    assert.ok(!existsSync(join(dir, 'CLAUDE.kit.md')) && !existsSync(join(dir, '.gitignore.kit')), 'DryRun なのに横に置いた');
+    assert.ok(!existsSync(join(dir, 'Scripts/issue-run.ps1')), 'DryRun なのに書いた');
+    // 本番: 既にある物は元のまま・横の物はキットの物・ほかは全部入る
+    const r = inst();
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /Result: PASS \(\d+ 件を写した・横に置いた 2 件/);
+    assert.equal(readFileSync(join(dir, 'CLAUDE.md'), 'utf8'), '# mine\n');
+    assert.equal(readFileSync(join(dir, '.gitignore'), 'utf8'), 'Library/\n');
+    assert.deepEqual(readFileSync(join(dir, 'CLAUDE.kit.md')), readFileSync(join(files, 'CLAUDE.md')));
+    assert.deepEqual(readFileSync(join(dir, '.gitignore.kit')), readFileSync(join(files, '.gitignore')));
+    for (const f of unityFiles) assert.ok(existsSync(join(dir, f)), `写っていない: ${f}`);
+    assert.deepEqual(readFileSync(join(dir, '.gitattributes')), readFileSync(join(files, '.gitattributes')));
+    const v = JSON.parse(readFileSync(join(dir, '.issue-kit/version'), 'utf8'));
+    assert.ok(!v.files.some((f) => f.endsWith('.kit') || f.includes('.kit.')), '版のファイルに横に置いた名前を入れた');
+    // もう一度入れても PASS（何も写さない）
+    const again = inst();
+    assert.equal(again.status, 0, again.stdout + again.stderr);
+    assert.match(again.stdout, /Result: PASS \(0 件を写した・横に置いた 2 件/);
+    // 利用先が手を入れる物でないファイルがぶつかると、何も書かずに FAIL
+    rmSync(join(dir, 'CLAUDE.kit.md'));
+    writeFileSync(join(dir, 'Scripts/unity-test.ps1'), '# mine\n');
+    const c = inst();
+    assert.equal(c.status, 1, c.stdout + c.stderr);
+    assert.match(c.stdout, /Result: FAIL \(ぶつかる 1 件\)/);
+    assert.ok(!existsSync(join(dir, 'CLAUDE.kit.md')), 'FAIL なのに横に置いた');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

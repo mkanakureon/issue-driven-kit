@@ -196,7 +196,7 @@ gh repo clone <アカウント>/<名前>
 | 1 | 入れる脚本を `--dry-run`（Unity 版は `-DryRun`）で実行し、写すファイルの一覧と、既にあるファイルとぶつかる所を見せる。ここで止まる |
 | 2 | 人が「入れて」と入力したら、入れる脚本を本番で実行する。既にあるファイルは上書きしない |
 | 3 | **Node 版だけ**：vitest（と、Cloudflare Workers のプロジェクトなら `@cloudflare/vitest-pool-workers`）を `devDependencies` に足し、`npm test` が `scripts/test.mjs` を呼ぶようにする。`package.json` の `engines` と `.nvmrc` に Node.js の版を書く。版の組み合わせは公式の案内で確かめて固定する（入れる脚本はパッケージを足さない） |
-| 4 | `CLAUDE.md` の「プロジェクト」「コマンド」を、このリポジトリに合わせて書く（何を作るか・使う技術・テストの打ち方） |
+| 4 | `CLAUDE.md` の「プロジェクト」「コマンド」を、このリポジトリに合わせて書く（何を作るか・使う技術・テストの打ち方）。入れる脚本が `CLAUDE.kit.md` などを横に置いたときは、先にその中身を既にある物に足して、横に置いた物を消す |
 
 入れる脚本は、ファイルを写すほかに、人の入力の置き場と記録の置き場（Node 版 `docs/inspecs/`・`docs/reports/`、Unity 版 `Docs/InSpecs/`・`Docs/Reports/`）を無ければ作り（中に `.gitkeep`）、`.issue-kit/version` を書きます。Node 版は `.gitignore` に `.issue-run/` の 1 行を足します。どちらも最後の行が `Result: PASS`／`Result: FAIL` です。
 
@@ -204,7 +204,7 @@ gh repo clone <アカウント>/<名前>
 |---|---|
 | `--target <パス>`／`-Target <パス>` | 入れる先（git の作業場所の直下）。直下でなければ止まる |
 | `--dry-run`／`-DryRun` | 写すファイルと、ぶつかるファイルを出すだけ。何も書かない（`Result: PASS (DryRun・何も書いていない)`） |
-| （なし） | 初めて入れる。既にあって中身が違うファイルがあれば、上書きせずに一覧を出して `Result: FAIL (ぶつかる N 件)` |
+| （なし） | 初めて入れる。既にあるファイルは上書きしない。利用先が手を入れる物（Node 版 `CLAUDE.md`、Unity 版 `CLAUDE.md`・`.gitignore`・`.gitattributes`）が既にあれば、それは残し、キットの物を `CLAUDE.kit.md`・`.gitignore.kit` のように横に置いて残りを入れる（`Result: PASS (… 件を写した・横に置いた N 件 …)`）。ほかに中身の違うファイルがあれば、何も書かずに一覧を出して `Result: FAIL (ぶつかる N 件)` |
 | `--update`／`-Update` | 入っている版を上げる。利用先が手を入れるファイル（`CLAUDE.md` など）は上書きしない |
 
 ```text
@@ -428,7 +428,8 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 
 | 症状 | 原因 | 直し方 |
 |---|---|---|
-| 入れる脚本が「既にある」と止まった | 同じ名前のファイルがある（例：既にある `CLAUDE.md`） | 一覧を見て、そのファイルに足す形にするよう Claude Code に頼む（「既にある CLAUDE.md に、キットの原則と入口を足して」） |
+| 入れる脚本が `CLAUDE.kit.md` を横に置いた | 既に `CLAUDE.md` がある（Unity 版は `.gitignore`・`.gitattributes` も同じ。`.gitignore.kit` などになる） | Claude Code に頼む（「CLAUDE.kit.md の原則と入口を、既にある CLAUDE.md に足して、CLAUDE.kit.md を消して」） |
+| 入れる脚本が「ぶつかる」と止まった（何も書いていない） | 利用先が手を入れる物でないファイルで、同じ名前・違う中身の物がある（例：既にある `scripts/test.mjs`） | 一覧を見て、そのファイルをどうするか Claude Code と決める（名前を変えて退ける・キットの物に足す形にする）。そのあと入れ直す |
 | テストの入口が 0 件で PASS になる | テストの入口の作りの誤り | 5.1 の 3 つで確かめ直す。PASS になるなら直してから先に進む |
 | `gh` が見つからない（Windows） | 入れた直後のシェルに PATH が通っていない | 新しい窓を開く |
 | 点検で「裸の CLAUDE.md の禁止」 | 禁止の設定に `Edit(CLAUDE.md)` がある | `//{{REPO}}/CLAUDE.md` の形にする（キットの設定はそうなっている） |

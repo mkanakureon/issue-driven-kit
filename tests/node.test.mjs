@@ -219,6 +219,64 @@ test('入れる脚本（Node 版）: DryRun・本番・2 回目・ぶつかる�
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('入れる脚本（Node 版）: 既にある CLAUDE.md は残し、キットの物を CLAUDE.kit.md として横に置いて残りを入れる', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kit-node-aside-'));
+  try {
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    writeFileSync(join(dir, 'CLAUDE.md'), '# mine\n');
+    const inst = join(nodeRoot, 'install.mjs');
+    const kitClaude = readFileSync(join(nodeRoot, 'files/CLAUDE.md'));
+    // DryRun: 横に置く予定が一覧と合計に出て、何も書かない
+    const dry = node([inst, '--target', dir, '--dry-run']);
+    assert.equal(dry.status, 0, dry.stdout + dry.stderr);
+    assert.match(dry.stdout, /^aside +CLAUDE\.md → CLAUDE\.kit\.md$/m);
+    assert.match(dry.stdout, /横に置く（[^）]*） 1/);
+    assert.match(dry.stdout, /Result: PASS \(DryRun・何も書いていない\)/);
+    assert.ok(!existsSync(join(dir, 'CLAUDE.kit.md')), 'DryRun なのに横に置いた');
+    assert.ok(!existsSync(join(dir, 'scripts/test.mjs')), 'DryRun なのに書いた');
+    // 本番: CLAUDE.md は元のまま・CLAUDE.kit.md はキットの物・ほかは全部入る
+    const r = node([inst, '--target', dir]);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.match(r.stdout, /Result: PASS \(\d+ 件を写した・横に置いた 1 件/);
+    assert.match(r.stdout, /CLAUDE\.kit\.md（CLAUDE\.md に足す）/);
+    assert.equal(read(join(dir, 'CLAUDE.md')), '# mine\n', '既にある CLAUDE.md を書き換えた');
+    assert.deepEqual(readFileSync(join(dir, 'CLAUDE.kit.md')), kitClaude, 'CLAUDE.kit.md がキットの物と違う');
+    for (const f of nodeFiles.filter((f) => f !== 'CLAUDE.md')) assert.ok(existsSync(join(dir, f)), `写っていない: ${f}`);
+    const v = JSON.parse(read(join(dir, '.issue-kit/version')));
+    assert.ok(!v.files.includes('CLAUDE.kit.md'), '版のファイルに横に置いた名前を入れた');
+    // もう一度入れても PASS（何も写さない）
+    const again = node([inst, '--target', dir]);
+    assert.equal(again.status, 0, again.stdout + again.stderr);
+    assert.match(again.stdout, /Result: PASS \(0 件を写した・横に置いた 1 件/);
+    assert.equal(read(join(dir, 'CLAUDE.md')), '# mine\n');
+    // 横に置いた物が古くなっていれば、キットの物で書き直す
+    writeFileSync(join(dir, 'CLAUDE.kit.md'), 'old\n');
+    assert.equal(node([inst, '--target', dir]).status, 0);
+    assert.deepEqual(readFileSync(join(dir, 'CLAUDE.kit.md')), kitClaude);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('入れる脚本（Node 版）: 利用先が手を入れる物でないファイルがぶつかると、何も書かずに FAIL', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'kit-node-conflict-'));
+  try {
+    assert.equal(spawnSync('git', ['init', '-q', dir]).status, 0);
+    writeFileSync(join(dir, 'CLAUDE.md'), '# mine\n');
+    mkdirSync(join(dir, 'scripts'));
+    writeFileSync(join(dir, 'scripts/test.mjs'), '// mine\n');
+    // .git の外のファイルの一覧（入れる脚本が書いたかを比べる）
+    const list = () => walk(dir).map((f) => relative(dir, f).replaceAll('\\', '/')).filter((f) => !f.startsWith('.git/')).sort();
+    const before = list();
+    const r = node([join(nodeRoot, 'install.mjs'), '--target', dir]);
+    assert.equal(r.status, 1, r.stdout + r.stderr);
+    assert.match(r.stdout, /Result: FAIL \(ぶつかる 1 件\)/);
+    const after = list();
+    assert.deepEqual(after, before, '何か書いた');
+    assert.ok(!existsSync(join(dir, 'CLAUDE.kit.md')), 'CLAUDE.kit.md を書いた');
+    assert.equal(read(join(dir, 'CLAUDE.md')), '# mine\n');
+    assert.equal(read(join(dir, 'scripts/test.mjs')), '// mine\n');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('Stop hook（Node 版）: 押し返す・終わらせる・守るファイル・点検の印', () => {
   const dir = mkdtempSync(join(tmpdir(), 'kit-hook-'));
   try {
