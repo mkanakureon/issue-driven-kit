@@ -128,7 +128,7 @@ flowchart LR
 | git | `git --version` |
 | GitHub CLI（ログイン済み） | `gh auth status` |
 | PowerShell 7 | `pwsh --version`（`issue-run.ps1` は 7 でしか動かない） |
-| 無人の回用の長いトークン | `claude setup-token` の値を環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に |
+| 無人の回用の長いトークン | Claude Code の外のターミナルで `claude setup-token` を回し、出た値は会話に貼らないで、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れる |
 
 道具を入れるのも Claude Code に頼めます（「gh を入れて」「pwshを入れて」）。ログインのようにブラウザで承認する操作だけは、人が `! gh auth login` のように `!` を付けて入力します。
 
