@@ -388,20 +388,26 @@ try {
 } finally {
   awake.stop();
   rmSync(LOCK_FILE, { force: true }); rmSync(ISSUE_FILE, { force: true });
-  // まとめ（仕様 6 章）
-  const d = now();
-  const dayDir = join(ROOT, 'docs/reports', String(d.getFullYear()), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0'));
-  mkdirSync(dayDir, { recursive: true });
-  const nums = readdirSync(dayDir).map((n) => /^(\d{2})-/.exec(n)?.[1]).filter(Boolean).map(Number);
-  const next = (nums.length ? Math.max(...nums) : 0) + 1;
-  const summaryPath = join(dayDir, `${String(next).padStart(2, '0')}-issue-run.md`);
-  writeFileSync(summaryPath, L.summaryMarkdown({ runStamp: RUN_STAMP, repo: REPO, folder: basename(ROOT), branch: BRANCH, logDir: LOG_DIR_REL, aborted, results }), 'utf8');
-  step(`まとめ: ${summaryPath}`);
-  // 履歴と終わりの知らせ（仕様 6 章）。知らせが失敗しても回の結果は変えない
-  const summaryRel = relative(ROOT, summaryPath).replaceAll('\\', '/');
-  appendFileSync(RUNS_LOG, L.runsLogLine({ runStamp: RUN_STAMP, count: targets.length, results, aborted, summary: summaryRel }), 'utf8');
-  const notice = L.finishNotice({ platform: process.platform, results, aborted, notify: NOTIFY });
-  if (notice.bell) console.log(notice.bell);
-  if (notice.osascript) { try { run('osascript', notice.osascript); } catch { /* 知らせは結果に影響させない */ } }
+  // まとめ → 履歴 → 終わりの知らせ（仕様 6 章）。まとめが書けなくても履歴と知らせは出し、回の結果は変えない
+  L.finishRun({
+    writeSummary: () => {
+      const d = now();
+      const dayDir = join(ROOT, 'docs/reports', String(d.getFullYear()), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0'));
+      mkdirSync(dayDir, { recursive: true });
+      const nums = readdirSync(dayDir).map((n) => /^(\d{2})-/.exec(n)?.[1]).filter(Boolean).map(Number);
+      const next = (nums.length ? Math.max(...nums) : 0) + 1;
+      const summaryPath = join(dayDir, `${String(next).padStart(2, '0')}-issue-run.md`);
+      writeFileSync(summaryPath, L.summaryMarkdown({ runStamp: RUN_STAMP, repo: REPO, folder: basename(ROOT), branch: BRANCH, logDir: LOG_DIR_REL, aborted, results }), 'utf8');
+      step(`まとめ: ${summaryPath}`);
+      return relative(ROOT, summaryPath).replaceAll('\\', '/');
+    },
+    appendRunsLog: (summaryRel) => appendFileSync(RUNS_LOG, L.runsLogLine({ runStamp: RUN_STAMP, count: targets.length, results, aborted, summary: summaryRel }), 'utf8'),
+    notify: () => {
+      const notice = L.finishNotice({ platform: process.platform, results, aborted, notify: NOTIFY });
+      if (notice.bell) console.log(notice.bell);
+      if (notice.osascript) { try { run('osascript', notice.osascript); } catch { /* 知らせは結果に影響させない */ } }
+    },
+    log: step,
+  });
 }
 process.exit(aborted ? 1 : 0);

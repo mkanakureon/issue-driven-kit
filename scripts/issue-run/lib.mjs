@@ -254,6 +254,16 @@ export function runsLogLine({ runStamp, count, results = [], aborted = '', summa
   return [runStamp, `対象 ${count} 件`, res, summary || '-'].join('\t') + '\n';
 }
 
+// 6 章：終わりの片付けの順番（まとめ → runs.log → 知らせ）。まとめが書けなくても runs.log（まとめは「-」）と知らせは出す。
+// runs.log に足せなくても知らせは出す。どちらも窓に 1 行出すだけで、回の結果は変えない
+export function finishRun({ writeSummary, appendRunsLog, notify, log }) {
+  let summaryRel = '-';
+  try { summaryRel = writeSummary() || '-'; } catch (e) { log(`まとめを書けなかった: ${e?.message ?? e}`); }
+  try { appendRunsLog(summaryRel); } catch (e) { log(`runs.log に足せなかった: ${e?.message ?? e}`); }
+  notify();
+  return summaryRel;
+}
+
 // 6 章：対象 0 件のときに出す、直近に合格した Issue（gh issue list --json number,title,updatedAt の結果）
 export function latestDoneText(list) {
   const t = (list ?? [])[0];

@@ -198,6 +198,40 @@ test('対象 0 件（Node 版）: 履歴に 1 行残し、直近に合格した 
   assert.match(src, /RUNS_LOG = join\(ROOT, LOG_BASE, 'runs\.log'\)/);
 });
 
+// 終わりの片付けの偽の関数。呼ばれた順と runs.log に渡したパスと窓の行を残す
+function fakeFinish(writeSummary) {
+  const calls = []; const logs = [];
+  const summary = lib.finishRun({
+    writeSummary: () => { calls.push('summary'); return writeSummary(); },
+    appendRunsLog: (rel) => calls.push(`runs.log ${rel}`),
+    notify: () => calls.push('notify'),
+    log: (line) => logs.push(line),
+  });
+  return { summary, calls, logs };
+}
+
+test('終わりの片付け: まとめが書けなくても、runs.log の 1 行（まとめは -）と知らせは出す', () => {
+  const r = fakeFinish(() => { throw new Error('ENOSPC: ディスクがいっぱい'); });
+  assert.deepEqual(r.calls, ['summary', 'runs.log -', 'notify']);
+  assert.deepEqual(r.logs, ['まとめを書けなかった: ENOSPC: ディスクがいっぱい']);
+  assert.equal(r.summary, '-');
+  // runs.log に足せなくても知らせは出す
+  const logs = []; let notified = false;
+  lib.finishRun({ writeSummary: () => { throw new Error('x'); }, appendRunsLog: () => { throw new Error('EACCES'); }, notify: () => { notified = true; }, log: (l) => logs.push(l) });
+  assert.ok(notified);
+  assert.deepEqual(logs, ['まとめを書けなかった: x', 'runs.log に足せなかった: EACCES']);
+  // 脚本の finally は finishRun を通す
+  const src = read(join(nodeRoot, 'files/scripts/issue-run/issue-run.mjs'));
+  assert.match(src.slice(src.lastIndexOf('} finally {')), /L\.finishRun\(\{/);
+});
+
+test('終わりの片付け: まとめが書けたら、runs.log の 1 行にまとめの相対パスを書く', () => {
+  const r = fakeFinish(() => 'docs/reports/2026/10/27/01-issue-run.md');
+  assert.deepEqual(r.calls, ['summary', 'runs.log docs/reports/2026/10/27/01-issue-run.md', 'notify']);
+  assert.deepEqual(r.logs, []);
+  assert.equal(r.summary, 'docs/reports/2026/10/27/01-issue-run.md');
+});
+
 // 権限を返す関数を外から与える（GitHub を呼ばない）。読めない人は投げる
 const perms = { owner: 'admin', member: 'write', lead: 'maintain', guest: 'read', triager: 'triage' };
 const permissionOf = (login) => { if (!(login in perms)) throw new Error('HTTP 404'); return perms[login]; };
