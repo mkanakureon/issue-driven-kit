@@ -1,9 +1,11 @@
 // node.test.mjs — Node 版の試験（node --test）。基本設計の K-2・K-3（Node 側）と、外に触らない部品。
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
 import { join, dirname, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
 import { gitIn } from './helpers.mjs';
 
 const kit = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -229,9 +231,6 @@ test('無人の回（Node 版）: 前提の確かめは書き込みの権限の�
 });
 
 // ---- 外に触る部品（GitHub と Claude を呼ばない範囲） ----
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { spawnSync } from 'node:child_process';
 
 const nodeFiles = [
   'CLAUDE.md',
