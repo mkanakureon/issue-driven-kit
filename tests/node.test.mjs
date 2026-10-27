@@ -198,13 +198,13 @@ test('対象 0 件（Node 版）: 履歴に 1 行残し、直近に合格した 
   assert.match(src, /RUNS_LOG = join\(ROOT, LOG_BASE, 'runs\.log'\)/);
 });
 
-// 終わりの片付けの偽の関数。呼ばれた順と runs.log に渡したパスと窓の行を残す
-function fakeFinish(writeSummary) {
+// 終わりの片付けの偽の関数。呼ばれた順と runs.log に渡したパスと窓の行を残す。notify を渡すと知らせの後に呼ぶ
+function fakeFinish(writeSummary, notify = () => {}) {
   const calls = []; const logs = [];
   const summary = lib.finishRun({
     writeSummary: () => { calls.push('summary'); return writeSummary(); },
     appendRunsLog: (rel) => calls.push(`runs.log ${rel}`),
-    notify: () => calls.push('notify'),
+    notify: () => { calls.push('notify'); notify(); },
     log: (line) => logs.push(line),
   });
   return { summary, calls, logs };
@@ -229,6 +229,13 @@ test('終わりの片付け: まとめが書けたら、runs.log の 1 行にま
   const r = fakeFinish(() => 'docs/reports/2026/10/27/01-issue-run.md');
   assert.deepEqual(r.calls, ['summary', 'runs.log docs/reports/2026/10/27/01-issue-run.md', 'notify']);
   assert.deepEqual(r.logs, []);
+  assert.equal(r.summary, 'docs/reports/2026/10/27/01-issue-run.md');
+});
+
+test('終わりの片付け: 知らせが投げても、窓に 1 行出して終わる', () => {
+  const r = fakeFinish(() => 'docs/reports/2026/10/27/01-issue-run.md', () => { throw new Error('osascript が無い'); });
+  assert.deepEqual(r.calls, ['summary', 'runs.log docs/reports/2026/10/27/01-issue-run.md', 'notify']);
+  assert.deepEqual(r.logs, ['知らせを出せなかった: osascript が無い']);
   assert.equal(r.summary, 'docs/reports/2026/10/27/01-issue-run.md');
 });
 
