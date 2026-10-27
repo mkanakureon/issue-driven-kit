@@ -56,7 +56,7 @@ flowchart LR
 | Issue の確認コマンド | ```` ```pwsh ```` の塊 | ```` ```js ```` の塊 |
 | テストの入口 | `Scripts/unity-test.ps1` | `scripts/test.mjs`（`npm test`） |
 | 置き場の名前 | `Scripts/`・`Docs/` | `scripts/`・`docs/`（小文字） |
-| 実際に動いた例 | KaedeScapeBuii（Issue 13 件が全部合格） | キット自身（Node 版を入れて、キットを Issue 駆動で作っている・Windows）。最初の利用先 `rpg-online-cloudflare` はこれから |
+| 実際に動いた例 | KaedeScapeBuii（Issue 13 件が全部合格） | キット自身（Node 版を入れて、キットを Issue 駆動で作っている・Windows）と、最初の利用先 `rpg-online-cloudflare`（Mac。無人の回で 4 件とも 1 回目で合格） |
 | 確かめた OS | Windows | Windows・Mac（macOS 15.8.1。手順は「[Mac で確かめる](#mac-で確かめる)」） |
 
 どちらにも合わない技術（Python・Go など）は、いまは Node 版を元に手で直す形になります（[`issue-driven-repo-setup.md`](issue-driven-repo-setup.md)）。
