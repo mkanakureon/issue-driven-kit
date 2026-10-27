@@ -16,9 +16,11 @@ import { gitIn, pwshCrashed, runWithRetry } from './helpers.mjs';
 
 const kit = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (p) => readFileSync(join(kit, p), 'utf8').replace(/^﻿/, '').replace(/\r/g, '');
-const hasPwsh = process.platform === 'win32' && spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0']).status === 0;
 // pwsh そのものが落ちたときだけ、2 回までやり直す（やり直すたびに 1 行残す。tests/helpers.mjs）
 const pwsh = (args, opts) => runWithRetry(() => spawnSync('pwsh', args, opts));
+// pwsh があるかの確かめもやり直しを通す（ここで落ちると Unity 版の試験が黙って全部飛ばされるため）。Windows でないときは黙って飛ばす
+const hasPwsh = process.platform === 'win32' && runWithRetry(() => spawnSync('pwsh', ['-NoProfile', '-Command', 'exit 0'])).status === 0;
+if (process.platform === 'win32' && !hasPwsh) console.error('pwsh が無いので Unity 版の試験を飛ばす（pwsh -NoProfile -Command "exit 0" が 0 で終わらない）');
 
 const unityFiles = [
   'CLAUDE.md',
