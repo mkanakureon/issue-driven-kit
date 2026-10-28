@@ -3,15 +3,15 @@
 Claude Code に GitHub の Issue を**合格するまで無人で**進めさせる仕組み（Issue 駆動）を、自分のリポジトリに入れるためのキットです。元は、作者の Unity のリポジトリ KaedeScapeBuii（private）で、撮影ツールを空のプロジェクトから EXE まで作ったときの仕組み（Issue 13 件が全部合格）です。
 
 > [!IMPORTANT]
-> **いまの状態（2026-10-23）**
+> **いまの状態（2026-10-28）**
 > - **Unity 版**は使えます（KaedeScapeBuii で Issue 13 件が合格した実物の写し）。
 > - **Node 版**（Windows・Mac・Node.js だけ）は、**Windows で確かめました**（キットの試験・見本のプロジェクトに入れてテストの入口を 3 つで回す・点検・DryRun。キット自身も Node 版で Issue 駆動にしています）。
 > - **Windows で確かめた手順**（自分のリポジトリで Claude Code にキットのパスを示して入れるところから、点検と DryRun まで。出力つき）は、版ごとに 1 本ずつあります：[Windows で確かめる（Unity 版）](shared/manuals/issue-driven-kit-windows-check.md#windows-で確かめるunity-版)・[Windows で確かめる（Node 版）](shared/manuals/issue-driven-kit-windows-check.md#windows-で確かめるnode-版)。
-> - **Mac は人が確かめます。** 手順と期待する出力は導入ガイドの「Mac で確かめる」にあります。結果が出るまで「Mac で動く」とは言いません。最初の利用先（rpg-online-cloudflare）で Mac の無人の回を回すのも、この手順の後です（基本設計の K-6・K-7）。
+> - **Node 版は Mac（macOS 15.8.1 arm64）でも確かめました**（入れる脚本・テストの入口・点検・DryRun・無人の回で Issue 4 件が 1 回目で合格。#3）。版は導入ガイドの「[確かめた版](shared/manuals/issue-driven-kit-install-guide.md#確かめた版)」、ほかの Mac で確かめる手順は「[Mac で確かめる](shared/manuals/issue-driven-kit-install-guide.md#mac-で確かめる)」にあります。
 
 ## 版を選ぶ
 
-| | **Unity 版** | **Node 版**（Windows で確かめた・Mac は人が確かめる） |
+| | **Unity 版** | **Node 版**（Windows・Mac で確かめた） |
 |---|---|---|
 | 向いているリポジトリ | Unity のプロジェクト | Node.js＋TypeScript（テストは vitest） |
 | 動く OS | Windows | Windows・Mac |

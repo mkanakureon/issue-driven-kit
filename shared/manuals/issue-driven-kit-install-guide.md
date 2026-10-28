@@ -20,7 +20,7 @@ project: issue-driven-kit
 | OS | **Windows 11**（Home 10.0.26200） | Node 版：キットの試験・入れる脚本・テストの入口（見本のプロジェクト）・点検・DryRun。Unity 版：KaedeScapeBuii で Issue 13 件が合格、空のフォルダーに入れて入れる脚本・テストの入口（Unity 6000.6.6f1）・点検・DryRun。手順と出力は版ごとに「[Windows で確かめる（Unity 版）](issue-driven-kit-windows-check.md#windows-で確かめるunity-版)」「[Windows で確かめる（Node 版）](issue-driven-kit-windows-check.md#windows-で確かめるnode-版)」 |
 | OS | **Mac**（macOS 15.8.1 arm64） | Node 版：入れる脚本・テストの入口・点検・DryRun・無人の回で Issue 4 件が 1 回目で合格（Node.js 22.14.0・npm 11.6.2・git 2.39.5・gh 2.103.0・Claude Code 2.1.309） |
 | Node.js | 22.14.0 | `node --version` → `v22.14.0` |
-| npm | 11.6.2 | `npm --version` → `11.6.2`（Mac で回した版。Windows の出力は前の決めた版のときのもので、Windows では 11.6.2 で vitest 4 を足せることを確かめた） |
+| npm | 11.6.2 | `npm --version` → `11.6.2` |
 | Claude Code | 2.1.309 | `claude --version` → `2.1.309 (Claude Code)` |
 | GitHub CLI | 2.103.0 | `gh --version` |
 | git | 2.55.0（Windows） | `git --version` |
@@ -221,7 +221,7 @@ gh repo clone <アカウント>/<名前>
 |---|---|
 | 1 | 入れる脚本を `--dry-run`（Unity 版は `-DryRun`）で実行し、写すファイルの一覧と、既にあるファイルとぶつかる所を見せる。ここで止まる |
 | 2 | 人が「入れて」と入力したら、入れる脚本を本番で実行する。既にあるファイルは上書きしない |
-| 3 | **Node 版だけ**：vitest（と、Cloudflare Workers のプロジェクトなら `@cloudflare/vitest-plugin`。旧 `@cloudflare/vitest-pool-workers` は非推奨）を `devDependencies` に足し、`npm test` が `scripts/test.mjs` を呼ぶようにする。`package.json` の `engines` と `.nvmrc` に Node.js の版を書く。版の組み合わせは公式の案内で確かめて固定する（Mac では vitest 5.0.3・`@cloudflare/vitest-plugin` 1.4.0 で通った。入れる脚本はパッケージを足さない） |
+| 3 | **Node 版だけ**：vitest（と、Cloudflare Workers のプロジェクトなら `@cloudflare/vitest-plugin`。旧 `@cloudflare/vitest-pool-workers` は非推奨）を `devDependencies` に足し、`npm test` が `scripts/test.mjs` を呼ぶようにする。`package.json` の `engines` と `.nvmrc` に Node.js の版を書く。版の組み合わせは公式の案内で確かめて固定する（確かめた版は「[確かめた版](#確かめた版)」の表。入れる脚本はパッケージを足さない） |
 | 4 | `CLAUDE.md` の「プロジェクト」「コマンド」を、このリポジトリに合わせて書く（何を作るか・使う技術・テストの打ち方）。入れる脚本が `CLAUDE.kit.md` などを横に置いたときは、先にその中身を既にある物に足して、横に置いた物を消す |
 
 Cloudflare Workers のプロジェクトでは、`vitest.config.ts` で `@cloudflare/vitest-plugin` の `cloudflareTest` を使い、`wrangler.jsonc` を読ませます（Cloudflare の公式の案内「Write your first test」の書き方）。
@@ -283,7 +283,7 @@ pwsh <キット>\editions\unity\install.ps1 -Target .
 
 | 回し方 | 期待する最後の行 | 終了コード |
 |---|---|---|
-| 全部 | `Result: PASS <件数>` | 0 |
+| 全部 | `Result: PASS <件数>/<件数>` | 0 |
 | 0 件 | `Result: FAIL … 0/0` | 1 |
 | わざと落とす | `Result: FAIL` | 1 |
 
@@ -307,6 +307,7 @@ issue-run を DryRun で回して
 | テストの入口（Node 版。`--run-tests` を付けたときだけ） | `OK   テスト: Result: PASS …` |
 | キットの版（Node 版） | 入っている版がキットの最新なら `OK`、古ければ `WARN`（手順 8 で新しくする） |
 | 長期トークン | `CLAUDE_CODE_OAUTH_TOKEN` が無ければ `WARN`（手順 1.3） |
+| 作業ツリー | 変更 0 で `OK`。未コミットがあれば `WARN`（無人の回のコミットと混ざる）。起動前にコミットする |
 | 眠らせない（Node 版） | Mac は `OK`（`caffeinate` を無人の回が使う）。Windows は電源の設定を知らせる `WARN` |
 | DryRun | `[時刻] 対象 <数> 件: …` を出して終了コード 0（Issue がまだ無ければ「対象 0 件」） |
 
@@ -425,7 +426,7 @@ npm test; echo "exit=$?"
 
 | 期待する出力 | |
 |---|---|
-| 最後の行 | `Result: PASS <件数>/<件数>`（Mac では PowerShell の要る Unity 版の試験を飛ばすので、Windows の 28 より少ない。飛ばした試験は件数に入らない） |
+| 最後の行 | `Result: PASS <件数>/<件数>`（Mac では PowerShell の要る Unity 版の試験を飛ばすので、Windows より少ない。飛ばした試験は件数に入らない） |
 | 終了コード | `exit=0` |
 
 見本のプロジェクトの試験（K-5）は `npm ci` でネットから vitest を取ります。ネットにつながらないときは飛ばされます。飛ばされたら、つながる所で回し直します。
