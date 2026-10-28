@@ -159,7 +159,7 @@ C:\work\KaedeScapeBuii の Docs/Guides/Manuals/issue-driven-repo-setup.md を読
 
 | 回し方 | 期待する最後の行 | 終了コード |
 |---|---|---|
-| 全部回す（テストが 1 本以上ある） | `Result: PASS <件数>` | 0 |
+| 全部回す（テストが 1 本以上ある） | `Result: PASS <件数>/<件数>` | 0 |
 | 無い名前を `-Filter` に渡す（0 件） | `Result: FAIL ... 0/0` | 1 |
 | わざと落ちるテストを 1 本足して回す | `Result: FAIL` | 1 |
 

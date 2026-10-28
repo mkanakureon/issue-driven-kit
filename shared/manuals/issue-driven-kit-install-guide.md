@@ -25,6 +25,7 @@ project: issue-driven-kit
 | GitHub CLI | 2.103.0 | `gh --version` |
 | git | 2.55.0（Windows） | `git --version` |
 | vitest（見本のプロジェクト） | 5.0.5 | `examples/node-sample` の `devDependencies` |
+| `@cloudflare/vitest-plugin`（Cloudflare Workers のプロジェクトのとき） | 1.4.0 | Mac で vitest 5.0.3 と組み合わせて、テストの入口が通った |
 
 > [!NOTE]
 > - **入力するプロンプト**は `text` の枠で示します。Claude Code の入力欄にそのまま入れてください。`<…>` は自分の値に置き換えます。
@@ -139,7 +140,7 @@ claude setup-token
 
 `~/.zprofile` に `export CLAUDE_CODE_OAUTH_TOKEN=<値>` の 1 行を足します。PATH と長いトークンは、ターミナルの新しい窓（ログインのシェル）が読む `~/.zprofile` にそろえます。
 
-**確かめ方**（両方）：入れた後に開いた新しい窓で、キットを入れたリポジトリのフォルダーから `node scripts/issue-run/doctor.mjs` を回し（キットを入れるのは手順 4 なので、この確かめは 5.2 の点検のときに一緒にします）、`OK   長期トークン` の行が出ることを見ます（`WARN 長期トークン` なら、その窓に渡っていません）。
+**確かめ方**（両方）：入れた後に開いた新しい窓で、キットを入れたリポジトリのフォルダーから `node scripts/issue-run/doctor.mjs` を回し（キットを入れるのは手順 4 なので、この確かめは 5.2 の点検のときに一緒にします）、`OK   長期トークン` の行が出ることを見ます（`WARN 長期トークン` なら、その窓に渡っていません）。新しい窓で確かめる意味があるのは Node 版の点検（`doctor.mjs`）だけです。Node 版の点検は起動した窓の環境変数を見ますが、Unity 版の点検（`Scripts/issue-run-doctor.ps1`）はユーザーの環境変数を直接読むので、入れる前に開いた古い窓でも `OK` が出ます。Unity 版でも、無人の回は新しい窓で起動します。
 
 ---
 
