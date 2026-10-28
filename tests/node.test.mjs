@@ -145,6 +145,18 @@ test('利用上限と認証切れの見分け', () => {
   assert.ok(lib.isAuthError('OAuth session expired'));
 });
 
+test('指示文の確かめの行: testRunner が node なら node --test と書く', () => {
+  const line = lib.workspaceStateText(lib.testRunnerOf(JSON.stringify({ issueKit: { testRunner: 'node', testFiles: 'tests/*.test.mjs' } })));
+  assert.ok(line.includes('node scripts/test.mjs（node --test）'), line);
+  assert.doesNotMatch(line, /vitest/);
+});
+
+test('指示文の確かめの行: testRunner が無いか vitest なら vitest と書く', () => {
+  for (const pkg of [JSON.stringify({ issueKit: { testRunner: 'vitest' } }), JSON.stringify({ name: 'x' }), '{ 読めない', null]) {
+    assert.ok(lib.workspaceStateText(lib.testRunnerOf(pkg)).includes('node scripts/test.mjs（vitest）'), String(pkg));
+  }
+});
+
 test('報告の「合格」の行', () => {
   assert.ok(lib.reportClaimsPass('## 結果: 合格\n| a |'));
   assert.ok(!lib.reportClaimsPass('## 結果: 未合格'));

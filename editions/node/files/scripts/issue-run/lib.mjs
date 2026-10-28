@@ -195,6 +195,17 @@ export function issuePrompt(templateText, { repo, number, branch, state, report,
     .replaceAll('{{WORKSPACE_STATE}}', state).replaceAll('{{REPORT}}', report).replaceAll('{{PROTECTED}}', prot);
 }
 
+// 指示文の作業場所の行（仕様 9 章）。確かめの行は package.json の issueKit.testRunner に合わせる（無い・読めなければ vitest。test.mjs と同じ）
+export function testRunnerOf(pkgText) {
+  if (pkgText == null) return 'vitest';
+  try { return JSON.parse(pkgText)?.issueKit?.testRunner ?? 'vitest'; } catch { return 'vitest'; }
+}
+
+export function workspaceStateText(testRunner) {
+  const runner = testRunner === 'node' ? 'node --test' : 'vitest';
+  return `この作業場所は使用中にしない。確かめは node scripts/test.mjs（${runner}）で、変えた所に関係するものだけ --filter で回す。wrangler dev などの開発サーバーを起動したままにしない。`;
+}
+
 export function continuePrompt(reason, state) {
   return ['まだ合格していない。続けて。', `理由: ${reason}`, `作業場所: ${state}`,
     '合格の条件を全部、実行結果で満たすまで進める。報告ファイルを最新にし、全部満たしたら「## 結果: 合格」と書く。'].join('\n');

@@ -186,9 +186,10 @@ function otherRunningIssues() {
   return nums;
 }
 
-// 作業場所の使用中の判定（仕様 9 章）。Node 版は使用中にしない。wrangler dev が動いていれば知らせだけ
+// 作業場所の使用中の判定（仕様 9 章）。Node 版は使用中にしない。確かめの行は package.json の testRunner に合わせる
 function workspaceState() {
-  return 'この作業場所は使用中にしない。確かめは node scripts/test.mjs（vitest）で、変えた所に関係するものだけ --filter で回す。wrangler dev などの開発サーバーを起動したままにしない。';
+  const pkg = join(ROOT, 'package.json');
+  return L.workspaceStateText(L.testRunnerOf(existsSync(pkg) ? L.readText(pkg) : null));
 }
 
 async function invokeClaude(prompt, minutes, outFile, sessionId, resume, env) {
