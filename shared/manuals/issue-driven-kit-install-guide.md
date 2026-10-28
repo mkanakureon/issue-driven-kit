@@ -551,11 +551,11 @@ DryRun が `別の issue-run が動いている（PID …）。終了する。` 
 | 順 | 入力するプロンプト・コマンド | 気をつけること |
 |---|---|---|
 | 1 | `cp -R ~/work/issue-driven-kit/examples/node-sample ~/work/my-app && cd ~/work/my-app && git init -q` → そのフォルダーで `claude` | 見本は写して使う（キットの clone の中の `examples/node-sample/` へ直に入れない） |
-| 2 | `~/work/issue-driven-kit の導入ガイドを読んで、このリポジトリに Node 版を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` | 既にある `src/`・`test/`・`package.json`・`vitest.config.ts` は触らない（キットは `.claude/`・`.github/`・`docs/`・`scripts/`・`CLAUDE.md` に入る。付録 B）。既に `CLAUDE.md` があるリポジトリでは `CLAUDE.kit.md` が横に置かれる（困ったとき） |
-| 3 | `入れて` → `npm ci` | テストの入口 `scripts/test.mjs` が vitest を回す。`engines` と `.nvmrc` を `22.14.0` にそろえる |
+| 2 | `~/work/issue-driven-kit の導入ガイドを読んで、このリポジトリに Node 版を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` | 既にある `src/`・`test/`・`package.json`・`vitest.config.ts` は触らない（キットは `.claude/`・`.github/`・`docs/`・`scripts/`・`CLAUDE.md`・`.issue-kit/version` に入り、`.gitignore` に `.issue-run/` の 1 行を足す。付録 B）。既に `CLAUDE.md` があるリポジトリでは `CLAUDE.kit.md` が横に置かれる（困ったとき） |
+| 3 | `入れて` → `npm ci` | テストの入口 `scripts/test.mjs` が vitest を回す。見本は `engines` と `.nvmrc` が既に `22.14.0`（自分のリポジトリでは、ここでそろえる） |
 | 4 | `CLAUDE.md の守るものに、このリポジトリで変えてはいけない物を入れて` | Cloudflare Workers のリポジトリなら、テストに `@cloudflare/vitest-plugin` が要ることがある。`wrangler deploy` は、入れた設定が無人の回でも断る |
 | 5 | 手順 5 の確かめ | Mac で回す。Windows でも回せる |
-| 6 | `src/add.ts の使い方を書いた説明書を書かせる Issue にして` → `コミットしてpushしてから作って` | push の前に、手順 3A のように自分の GitHub にリポジトリを作って `origin` にする。最初は文書を書かせる Issue（手順 6） |
+| 6 | `src/add.ts の使い方を書いた説明書を書かせる Issue にして` → `コミットしてpushしてから作って` | push の前に `自分の GitHub に private のリポジトリ my-app を作って、このフォルダーを origin にして` で GitHub に上げる（`gh repo create --source .`）。最初は文書を書かせる Issue（手順 6） |
 | 7 | 別のターミナルで `node scripts/issue-run/issue-run.mjs` → `issue-run を起動した` | Mac は `caffeinate` で眠らない |
 
 ---
