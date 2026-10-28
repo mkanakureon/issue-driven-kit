@@ -16,6 +16,7 @@ export const TEMPLATE = `種類: 説明（40 字以内。種類は ${TYPES.join(
 
 なぜ・変えたことを 1 行以上（細目は「- 」の箇条書き）
 （Issue #35）
+行を # で始めると、その行は数えない（Issue の番号は「（Issue #35）」のように前に字を置く）
 
 確かめ: node scripts/test.mjs → Result: PASS 55/55（回していなければ「確かめ: なし（文書のみ）」）
 
