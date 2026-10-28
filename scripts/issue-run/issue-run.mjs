@@ -189,7 +189,9 @@ function otherRunningIssues() {
 // 作業場所の使用中の判定（仕様 9 章）。Node 版は使用中にしない。確かめの行は package.json の testRunner に合わせる
 function workspaceState() {
   const pkg = join(ROOT, 'package.json');
-  return L.workspaceStateText(L.testRunnerOf(existsSync(pkg) ? L.readText(pkg) : null));
+  let text = null;
+  try { if (existsSync(pkg)) text = L.readText(pkg); } catch { /* 読めなければ vitest（test.mjs と同じ既定） */ }
+  return L.workspaceStateText(L.testRunnerOf(text));
 }
 
 async function invokeClaude(prompt, minutes, outFile, sessionId, resume, env) {
