@@ -180,7 +180,7 @@ clone して、そのフォルダーで Claude Code を起動します。
 gh repo clone <アカウント>/<名前>
 ```
 
-いまあるリポジトリの例（rpg-online-cloudflare）は付録 C にあります。
+いまあるリポジトリに入れる例は付録 C にあります。
 
 ---
 
@@ -432,7 +432,7 @@ find . -name '*.ps1' -not -path './node_modules/*' | wc -l
 
 ### M4 点検と DryRun
 
-キットの clone（Node 版が入っていて、`origin` が GitHub）で回します。rpg-online-cloudflare に入れた後（K-6）も、同じコマンドを同じ期待で回します。
+キットの clone（Node 版が入っていて、`origin` が GitHub）で回します。自分のリポジトリに Node 版を入れた後（K-6）も、そのフォルダーで同じコマンドを同じ期待で回します（`~/work/issue-driven-kit` の代わりに自分のリポジトリへ `cd` する）。
 
 ```bash
 cd ~/work/issue-driven-kit
@@ -449,7 +449,7 @@ DryRun が `別の issue-run が動いている（PID …）。終了する。` 
 
 ### M5 無人の回（K-7）
 
-rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node scripts/issue-run/issue-run.mjs` を起動します。期待するのは、1 回目の起動で Issue に合格のコメントが付き、ラベルが `claude-done` になることです。回している間に Mac が眠らないこと（`caffeinate` が動いていること）を `pgrep -fl caffeinate` で見ます。
+自分のリポジトリ（Node 版を入れて、`origin` が GitHub にあるもの。付録 C の写しを自分の GitHub に上げたものでもよい）で、手順 6 のとおり Issue を 1 件作り、そのフォルダーで別のターミナルから `node scripts/issue-run/issue-run.mjs` を起動します。期待するのは、1 回目の起動で Issue に合格のコメントが付き、ラベルが `claude-done` になることです。回している間に Mac が眠らないこと（`caffeinate` が動いていること）を `pgrep -fl caffeinate` で見ます。
 
 ---
 
@@ -544,18 +544,18 @@ rpg-online-cloudflare で Issue を 1 件作り、別のターミナルで `node
 
 ---
 
-## 付録 C いまあるリポジトリに入れる例（rpg-online-cloudflare・Node 版・Mac）
+## 付録 C いまあるリポジトリに入れる例（examples/node-sample・Node 版・Mac）
 
-最初の利用先として予定しているリポジトリです（基本設計の 2 章・D6）。
+公開の見本のプロジェクト `examples/node-sample/`（TypeScript・vitest の最小のプロジェクト）の写しを「いまあるリポジトリ」に見立てて入れます。自分のリポジトリに入れるときは、1 を手順 3B の clone に替え、2 からを同じ順に進めます。写し方は「Mac で確かめる」の M3 と同じです。
 
 | 順 | 入力するプロンプト・コマンド | 気をつけること |
 |---|---|---|
-| 1 | `gh repo clone mkanakureon/rpg-online-cloudflare` → そのフォルダーで `claude` | — |
-| 2 | `~/work/issue-driven-kit の導入ガイドを読んで、このリポジトリに Node 版を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` | 既にある `docs/` の 6 本と `docs/adr/`、`scripts/cli-mock.mjs` は触らない（キットは `docs/guides/`・`docs/reports/`・`scripts/issue-run/` に入る） |
-| 3 | `入れて` | vitest と `@cloudflare/vitest-plugin` が足される。`engines` を `22.14.0` に、`.nvmrc` を足す |
-| 4 | `CLAUDE.md の守るものに、README の「無認証 API のデプロイは行わない」を入れて。wrangler deploy は無人の回でも断るようにして` | キットの Node 版は `wrangler deploy` を断る設定を持つ（基本設計 4.3） |
+| 1 | `cp -R ~/work/issue-driven-kit/examples/node-sample ~/work/my-app && cd ~/work/my-app && git init -q` → そのフォルダーで `claude` | 見本は写して使う（キットの clone の中の `examples/node-sample/` へ直に入れない） |
+| 2 | `~/work/issue-driven-kit の導入ガイドを読んで、このリポジトリに Node 版を入れて。まず --dry-run で、写すファイルと、ぶつかるファイルを見せて` | 既にある `src/`・`test/`・`package.json`・`vitest.config.ts` は触らない（キットは `.claude/`・`.github/`・`docs/`・`scripts/`・`CLAUDE.md` に入る。付録 B）。既に `CLAUDE.md` があるリポジトリでは `CLAUDE.kit.md` が横に置かれる（困ったとき） |
+| 3 | `入れて` → `npm ci` | テストの入口 `scripts/test.mjs` が vitest を回す。`engines` と `.nvmrc` を `22.14.0` にそろえる |
+| 4 | `CLAUDE.md の守るものに、このリポジトリで変えてはいけない物を入れて` | Cloudflare Workers のリポジトリなら、テストに `@cloudflare/vitest-plugin` が要ることがある。`wrangler deploy` は、入れた設定が無人の回でも断る |
 | 5 | 手順 5 の確かめ | Mac で回す。Windows でも回せる |
-| 6 | `docs/03-roadmap.md の「優先的にテストする失敗ケース」8 つを、試験の名前の表にしたテスト計画を書かせる Issue にして` → `コミットしてpushしてから作って` | 基本設計 D6 の 1 件目。続けて正常系の試験・スコア投稿の異常系の試験 |
+| 6 | `src/add.ts の使い方を書いた説明書を書かせる Issue にして` → `コミットしてpushしてから作って` | push の前に、手順 3A のように自分の GitHub にリポジトリを作って `origin` にする。最初は文書を書かせる Issue（手順 6） |
 | 7 | 別のターミナルで `node scripts/issue-run/issue-run.mjs` → `issue-run を起動した` | Mac は `caffeinate` で眠らない |
 
 ---
