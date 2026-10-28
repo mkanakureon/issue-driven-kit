@@ -337,6 +337,23 @@ pwsh Scripts\issue-run.ps1
 
 多くの段で、次に入力するプロンプトが入力欄に灰色で出ます。合っていれば Tab → Enter で送れます。外への書き込み（「作って」「コミットしてpushして」「doneはcloseして」）は、下書きや結果を読んでから送ってください。
 
+### 6.1 長く回す（放っておくとき）
+
+無人の回は、札（`claude-run`）の付いた Issue を 1 件ずつ順に回し、合格するまで同じ会話を再開します。1 件の時間・再開の回数・1 回に回す件数・利用上限に当たったときの待ち方には上限があり、**既定の値と変え方は入れた先の `docs/guides/working/issue-run.md` の「起動」**にあります（キットの中では [`issue-run.md`](../../editions/node/files/docs/guides/working/issue-run.md)）。値はそこと脚本の既定の値が正なので、このガイドには写しません。
+
+| 知りたいこと | どうなるか |
+|---|---|
+| 合格しなかった | その Issue に `claude-failed` の札が付き、次の Issue へ進みます。直し方は、入れた先の `docs/guides/procedures/issue-goal-setting.md` の 8 章 |
+| 途中で止める | 窓を閉じるか `Ctrl+C` で止めます。回していた Issue には実行中の札 `claude-working` が残りますが、**次に起動したとき、前回の実行中の札が外れて対象に戻ります**（窓に「前回の実行中の札を外した」と出ます。ほかの worktree で動いている回の分は外しません） |
+| 中身のログ | `.issue-run/logs/<日時>/`（Issue ごとの指示・会話の結果・確認コマンドの出力） |
+| 回の履歴 | `.issue-run/logs/runs.log`（回ごとに 1 行。対象 0 件の回も残ります） |
+| まとめ | `docs/reports/YYYY/MM/DD/NN-issue-run.md`（合格しなかった → 合格した、の順。コミットして残します） |
+| 終わりの知らせ | 1 件以上回した回の終わりに、窓にベルと結果の 1 行が出ます（Mac は通知センターにも） |
+
+**Issue は、そのリポジトリに書き込みの権限（`write`・`maintain`・`admin`）のある人が書きます。** 無人の回は、権限の無い人が作った Issue を対象から外し、DryRun（`--dry-run`）と本番の最初の行に「外した」と番号・理由を出します。チームで使って「対象 0 件」になったら、まずここを見ます（決まりの正は仕様 [`issue-run-spec.md`](../spec/issue-run-spec.md) の 1.2）。
+
+Unity 版は置き場が違います（ログは `Logs/IssueRun/`、まとめは `Docs/Reports/`）。`runs.log`・終わりの知らせ・書き込みの権限の確かめは、Unity 版ではまだ入っていません（仕様の版の違いの表）。
+
 ---
 
 ## 手順 7：入れたキットをコミットして push する
