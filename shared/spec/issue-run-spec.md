@@ -35,7 +35,7 @@ Unity 版（`Scripts/issue-run.ps1`・PowerShell）と Node 版（`scripts/issue
 | `claude-done` | `0e8a16` | Claude が合格させた・確認待ち（閉じるのは人） | 脚本 |
 | `claude-failed` | `b60205` | 合格の条件が無い・回数切れ・異常終了 | 脚本（外すのは人） |
 
-ラベルが無ければ、実行の最初に作る。前回の実行が途中で落ちて `claude-working` が残っていれば外す（ほかの worktree の実行が進めている Issue は外さない）。
+ラベルが無ければ、実行の最初に作る。前回の実行が途中で落ちて残った `claude-working` は、対象が 1 件以上ある実行の最初に外す（ほかの worktree の実行が進めている Issue は外さない）。対象 0 件の実行は札を外さずに終えるので、止めた Issue のほかに対象が無いと札は残る。残った札は `--issue <番号>` の起動で外れる（`--issue` は札を見ずにその Issue を対象にし、そのあと前回の札を外す）。
 
 ### 1.2 書き込みの権限
 
