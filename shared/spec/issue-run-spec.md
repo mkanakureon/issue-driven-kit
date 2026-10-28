@@ -19,7 +19,7 @@ Unity 版（`Scripts/issue-run.ps1`・PowerShell）と Node 版（`scripts/issue
 
 | 決まり | 中身 |
 |---|---|
-| 札 | 開いていて、ラベル `claude-run` が付いていて、**作った人がそのリポジトリに書き込みの権限（`write`・`maintain`・`admin`）を持つ** Issue（1.2） |
+| 札 | 開いていて、ラベル `claude-run` が付いていて、**作った人がそのリポジトリに書き込みの権限を持つ** Issue（1.2） |
 | 外すもの | `claude-working`・`claude-done`・`claude-failed` のどれかが付いている Issue |
 | 順 | 番号の小さい順 |
 | 1 回の実行で進める数 | 最大 20 件（引数で変えられる） |
@@ -35,7 +35,7 @@ Unity 版（`Scripts/issue-run.ps1`・PowerShell）と Node 版（`scripts/issue
 | `claude-done` | `0e8a16` | Claude が合格させた・確認待ち（閉じるのは人） | 脚本 |
 | `claude-failed` | `b60205` | 合格の条件が無い・回数切れ・異常終了 | 脚本（外すのは人） |
 
-ラベルが無ければ、実行の最初に作る。前回の実行が途中で落ちて残った `claude-working` は、対象が 1 件以上ある実行の最初に外す（ほかの worktree の実行が進めている Issue は外さない）。対象 0 件の実行は札を外さずに終えるので、止めた Issue のほかに対象が無いと札は残る。残った札は `--issue <番号>` の起動で外れる（`--issue` は札を見ずにその Issue を対象にし、そのあと前回の札を外す）。
+ラベルが無ければ、実行の最初に作る。前回の実行が途中で落ちて残った `claude-working` は、対象が 1 件以上ある実行の最初に外す（ほかの worktree の実行が進めている Issue は外さない）。対象 0 件の実行は札を外さずに終えるので、止めた Issue のほかに対象が無いと札は残る。残った札は `--issue <番号>` の起動で外れる（`--issue` は札を見ずにその Issue を対象にし、そのあと前回の札を外す）。ただし `--issue` の起動でも 1.2 の書き込みの権限は確かめるので、その Issue を作った人に権限が無いと対象 0 件になり、札は外れずに残る。
 
 ### 1.2 書き込みの権限
 
@@ -43,7 +43,7 @@ Unity 版（`Scripts/issue-run.ps1`・PowerShell）と Node 版（`scripts/issue
 
 | 決まり | 中身 |
 |---|---|
-| 書き込みの権限 | GitHub の `repos/<owner>/<name>/collaborators/<login>/permission` の `permission` が `write`・`maintain`・`admin` のどれか（読むだけ） |
+| 書き込みの権限 | GitHub の `repos/<owner>/<name>/collaborators/<login>/permission` の `permission` が `write` か `admin`（読むだけ）。この欄の値は `admin`・`write`・`read`・`none` だけで、Maintain のロールの人は `write`、Triage のロールの人は `read` として返る（ロールの名前は `role_name` の欄） |
 | 使い回し | 1 回の起動の中では、同じ人の結果を使い回す |
 | 読めないとき | ネットの誤りなどで読めなければ、権限が無い側に倒す（Issue は拾わない・コメントは数えない） |
 | 外した Issue | 対象の一覧を出す行（DryRun と本番の最初の行）に、外した Issue の番号と理由（作った人に書き込みの権限が無い・権限が読めない）を出す |
