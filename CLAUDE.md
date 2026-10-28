@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト
 
-- **Issue 駆動キット**：利用先のリポジトリに写す部品（`editions/unity/files/`・`editions/node/files/`）・入れる脚本・共有の仕様と見本と説明書（`shared/`）・キットの設計（`docs/design/`）・キット自身の試験（`tests/`）。
+- **Issue 駆動キット**：利用先のリポジトリに写す部品（`editions/unity/files/`・`editions/node/files/`）・入れる脚本・共有の仕様と見本と説明書（`shared/`）・キットの設計（`docs/design/`）・キット自身の試験（`tests/`）・Node 版の見本のプロジェクト（`examples/node-sample/`。試験 K-5 がこれに Node 版を入れて回す）。
 - Node.js **22.14.0**（`.nvmrc`）・npm **11.6.2**。キットの試験は **`node --test`**（`tests/*.test.mjs`。npm のパッケージを使わない）。Unity 版の試験は Windows と PowerShell 7 があるときだけ回る。
 - 脚本のロジックは外に触る所（子のプロセス・GitHub・ファイル）から外へ出し、ふつうの関数にする（`lib.mjs` のように。試験で速く確かめるため。design-cycle §2）。
 
@@ -17,12 +17,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```text
 node scripts/test.mjs                              # テスト（npm test も同じ）
 node scripts/test.mjs --filter '<テストの名前>'      # 1 本
-npm run typecheck                                  # 型の確かめ（package.json にあれば）
 node scripts/issue-run/doctor.mjs                  # Issue の無人実行の点検
 node scripts/issue-run/issue-run.mjs --dry-run     # 対象の Issue を見るだけ（本番はユーザーが別の窓で）
 ```
 
 合否は最後の `Result:` 行（PASS 0・FAIL 1）。
+
 ## 原則（常時）
 
 1. **依頼の目的と範囲で働く。** 範囲内で `git` で戻せる判断は自分で決めて進み、**選んだ結果を1行で書く**（何を選んだか・違っていたらどう戻すか）。取り返しのつかないもの（削除・push・Issue の作成や閉じる等の外への書き込み・起動中のツール〔エディタ・開発サーバーなど〕の停止・worktree の追加削除）だけ先に確認する。
