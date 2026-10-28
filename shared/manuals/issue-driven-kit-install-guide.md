@@ -57,7 +57,7 @@ flowchart LR
 | テストの入口 | `Scripts/unity-test.ps1` | `scripts/test.mjs`（`npm test`） |
 | 置き場の名前 | `Scripts/`・`Docs/` | `scripts/`・`docs/`（小文字） |
 | 実際に動いた例 | KaedeScapeBuii（Issue 13 件が全部合格） | キット自身（Node 版を入れて、キットを Issue 駆動で作っている・Windows）と、最初の利用先 `rpg-online-cloudflare`（Mac。無人の回で 4 件とも 1 回目で合格） |
-| 確かめた OS | Windows | Windows・Mac（macOS 15.8.1。手順は「[Mac で確かめる](#mac-で確かめる)」） |
+| 確かめた OS | Windows | Windows・Mac（macOS 15.8.1。手順は「[付録 D キットの受け入れの確かめ（Mac）](#付録-d-キットの受け入れの確かめmac)」） |
 
 どちらにも合わない技術（Python・Go など）は、いまは Node 版を元に手で直す形になります（[`issue-driven-repo-setup.md`](issue-driven-repo-setup.md)）。
 
@@ -393,98 +393,6 @@ Unity 版は置き場が違います（ログは `Logs/IssueRun/`、まとめは
 
 ---
 
-## Mac で確かめる
-
-Node 版は Windows と Mac（macOS 15.8.1）で確かめました。ほかの Mac では**人が**次の順に回し、期待する出力と同じかを見ます（基本設計の K-6・K-7。Claude Code に回させてもかまいませんが、結果は人が読みます）。結果は「[確かめた版](#確かめた版)」の表に、版と日付と一緒に書き足します。
-
-### M1 道具
-
-```bash
-sw_vers -productVersion
-node --version
-npm --version
-git --version
-gh auth status
-claude --version
-```
-
-| コマンド | 期待する出力 |
-|---|---|
-| `sw_vers -productVersion` | Mac の版（表に書き足す） |
-| `node --version` | `v22.14.0` |
-| `npm --version` | `11.6.2` |
-| `gh auth status` | `Logged in to github.com` を含み、終了コード 0 |
-| `claude --version` | `<版> (Claude Code)`（表に書き足す） |
-
-### M2 キットの試験
-
-```bash
-git clone https://github.com/mkanakureon/issue-driven-kit.git ~/work/issue-driven-kit
-cd ~/work/issue-driven-kit
-npm test; echo "exit=$?"
-```
-
-| 期待する出力 | |
-|---|---|
-| 最後の行 | `Result: PASS <件数>/<件数>`（Mac では PowerShell の要る Unity 版の試験を飛ばすので、Windows より少ない。飛ばした試験は件数に入らない） |
-| 終了コード | `exit=0` |
-
-見本のプロジェクトの試験（K-5）は `npm ci` でネットから vitest を取ります。ネットにつながらないときは飛ばされます。飛ばされたら、つながる所で回し直します。
-
-### M3 見本のプロジェクトにキットを入れて、テストの入口を 3 つで回す
-
-```bash
-rm -rf ~/work/kit-mac-sample && cp -R ~/work/issue-driven-kit/examples/node-sample ~/work/kit-mac-sample
-cd ~/work/kit-mac-sample && git init -q
-node ~/work/issue-driven-kit/editions/node/install.mjs --target . --dry-run; echo "exit=$?"
-node ~/work/issue-driven-kit/editions/node/install.mjs --target .; echo "exit=$?"
-npm ci --no-audit --no-fund
-node scripts/test.mjs; echo "exit=$?"
-node scripts/test.mjs --filter 'どれにも当たらない名前'; echo "exit=$?"
-printf "import { it, expect } from 'vitest';\nit('わざと落とす', () => { expect(1).toBe(2); });\n" > test/fail.test.ts
-node scripts/test.mjs; echo "exit=$?"
-rm test/fail.test.ts
-```
-
-| コマンド | 期待する最後の行 | 終了コード |
-|---|---|---|
-| `install.mjs --dry-run` | `Result: PASS (DryRun・何も書いていない)` | 0 |
-| `install.mjs`（本番） | `Result: PASS (<件数> 件を写した・版 node・キット <コミット>)` | 0 |
-| テストの入口・全部 | `Result: PASS 2/2` | 0 |
-| テストの入口・0 件 | `Result: FAIL (0/0（テストが 0 件）)` | 1 |
-| テストの入口・わざと落とす | `Result: FAIL (2/3)` | 1 |
-
-入った後のファイルに `.ps1` が 1 本も無いことも見ます（K-2）。
-
-```bash
-find . -name '*.ps1' -not -path './node_modules/*' | wc -l
-```
-
-期待する出力は `0` です。
-
-### M4 点検と DryRun
-
-キットの clone（Node 版が入っていて、`origin` が GitHub）で回します。自分のリポジトリに Node 版を入れた後（K-6）も、そのフォルダーで同じコマンドを同じ期待で回します（`~/work/issue-driven-kit` の代わりに自分のリポジトリへ `cd` する）。
-
-```bash
-cd ~/work/issue-driven-kit
-node scripts/issue-run/doctor.mjs; echo "exit=$?"
-node scripts/issue-run/issue-run.mjs --dry-run; echo "exit=$?"
-```
-
-| コマンド | 期待する出力 | 終了コード |
-|---|---|---|
-| `doctor.mjs` | `NG` の行が無く、`OK   眠らせない: caffeinate がある（issue-run.mjs が実行中だけ使う）` があり、最後の行が `Result: PASS  WARN <数>` | 0 |
-| `issue-run.mjs --dry-run` | `[時刻] 対象 <数> 件: …`。Claude は起動しない | 0 |
-
-DryRun が `別の issue-run が動いている（PID …）。終了する。` で終了コード 3 になったら、ほかの窓の無人の回が終わってから回し直します。
-
-### M5 無人の回（K-7）
-
-自分のリポジトリ（Node 版を入れて、`origin` が GitHub にあるもの。付録 C の写しを自分の GitHub に上げたものでもよい）で、手順 6 のとおり Issue を 1 件作り、そのフォルダーで別のターミナルから `node scripts/issue-run/issue-run.mjs` を起動します。期待するのは、1 回目の起動で Issue に合格のコメントが付き、ラベルが `claude-done` になることです。回している間に Mac が眠らないこと（`caffeinate` が動いていること）を `pgrep -fl caffeinate` で見ます。
-
----
-
 ## 困ったとき
 
 | 症状 | 原因 | 直し方 |
@@ -578,7 +486,7 @@ DryRun が `別の issue-run が動いている（PID …）。終了する。` 
 
 ## 付録 C いまあるリポジトリに入れる例（examples/node-sample・Node 版・Mac）
 
-公開の見本のプロジェクト `examples/node-sample/`（TypeScript・vitest の最小のプロジェクト）の写しを「いまあるリポジトリ」に見立てて入れます。自分のリポジトリに入れるときは、1 を手順 3B の clone に替え、2 からを同じ順に進めます。写し方は「Mac で確かめる」の M3 と同じです。
+公開の見本のプロジェクト `examples/node-sample/`（TypeScript・vitest の最小のプロジェクト）の写しを「いまあるリポジトリ」に見立てて入れます。自分のリポジトリに入れるときは、1 を手順 3B の clone に替え、2 からを同じ順に進めます。写し方は付録 D の M3 と同じです。
 
 | 順 | 入力するプロンプト・コマンド | 気をつけること |
 |---|---|---|
@@ -589,6 +497,98 @@ DryRun が `別の issue-run が動いている（PID …）。終了する。` 
 | 5 | 手順 5 の確かめ | Mac で回す。Windows でも回せる |
 | 6 | `src/add.ts の使い方を書いた説明書を書かせる Issue にして` → `コミットしてpushしてから作って` | push の前に `自分の GitHub に private のリポジトリ my-app を作って、このフォルダーを origin にして` で GitHub に上げる（`gh repo create --source .`）。最初は文書を書かせる Issue（手順 6） |
 | 7 | 別のターミナルで `node scripts/issue-run/issue-run.mjs` → `issue-run を起動した` | Mac は `caffeinate` で眠らない |
+
+---
+
+## 付録 D キットの受け入れの確かめ（Mac）
+
+Node 版は Windows と Mac（macOS 15.8.1）で確かめました。ほかの Mac では**人が**次の順に回し、期待する出力と同じかを見ます（基本設計の K-6・K-7。Claude Code に回させてもかまいませんが、結果は人が読みます）。結果は「[確かめた版](#確かめた版)」の表に、版と日付と一緒に書き足します。
+
+### M1 道具
+
+```bash
+sw_vers -productVersion
+node --version
+npm --version
+git --version
+gh auth status
+claude --version
+```
+
+| コマンド | 期待する出力 |
+|---|---|
+| `sw_vers -productVersion` | Mac の版（表に書き足す） |
+| `node --version` | `v22.14.0` |
+| `npm --version` | `11.6.2` |
+| `gh auth status` | `Logged in to github.com` を含み、終了コード 0 |
+| `claude --version` | `<版> (Claude Code)`（表に書き足す） |
+
+### M2 キットの試験
+
+```bash
+git clone https://github.com/mkanakureon/issue-driven-kit.git ~/work/issue-driven-kit
+cd ~/work/issue-driven-kit
+npm test; echo "exit=$?"
+```
+
+| 期待する出力 | |
+|---|---|
+| 最後の行 | `Result: PASS <件数>/<件数>`（Mac では PowerShell の要る Unity 版の試験を飛ばすので、Windows より少ない。飛ばした試験は件数に入らない） |
+| 終了コード | `exit=0` |
+
+見本のプロジェクトの試験（K-5）は `npm ci` でネットから vitest を取ります。ネットにつながらないときは飛ばされます。飛ばされたら、つながる所で回し直します。
+
+### M3 見本のプロジェクトにキットを入れて、テストの入口を 3 つで回す
+
+```bash
+rm -rf ~/work/kit-mac-sample && cp -R ~/work/issue-driven-kit/examples/node-sample ~/work/kit-mac-sample
+cd ~/work/kit-mac-sample && git init -q
+node ~/work/issue-driven-kit/editions/node/install.mjs --target . --dry-run; echo "exit=$?"
+node ~/work/issue-driven-kit/editions/node/install.mjs --target .; echo "exit=$?"
+npm ci --no-audit --no-fund
+node scripts/test.mjs; echo "exit=$?"
+node scripts/test.mjs --filter 'どれにも当たらない名前'; echo "exit=$?"
+printf "import { it, expect } from 'vitest';\nit('わざと落とす', () => { expect(1).toBe(2); });\n" > test/fail.test.ts
+node scripts/test.mjs; echo "exit=$?"
+rm test/fail.test.ts
+```
+
+| コマンド | 期待する最後の行 | 終了コード |
+|---|---|---|
+| `install.mjs --dry-run` | `Result: PASS (DryRun・何も書いていない)` | 0 |
+| `install.mjs`（本番） | `Result: PASS (<件数> 件を写した・版 node・キット <コミット>)` | 0 |
+| テストの入口・全部 | `Result: PASS 2/2` | 0 |
+| テストの入口・0 件 | `Result: FAIL (0/0（テストが 0 件）)` | 1 |
+| テストの入口・わざと落とす | `Result: FAIL (2/3)` | 1 |
+
+入った後のファイルに `.ps1` が 1 本も無いことも見ます（K-2）。
+
+```bash
+find . -name '*.ps1' -not -path './node_modules/*' | wc -l
+```
+
+期待する出力は `0` です。
+
+### M4 点検と DryRun
+
+キットの clone（Node 版が入っていて、`origin` が GitHub）で回します。自分のリポジトリに Node 版を入れた後（K-6）も、そのフォルダーで同じコマンドを同じ期待で回します（`~/work/issue-driven-kit` の代わりに自分のリポジトリへ `cd` する）。
+
+```bash
+cd ~/work/issue-driven-kit
+node scripts/issue-run/doctor.mjs; echo "exit=$?"
+node scripts/issue-run/issue-run.mjs --dry-run; echo "exit=$?"
+```
+
+| コマンド | 期待する出力 | 終了コード |
+|---|---|---|
+| `doctor.mjs` | `NG` の行が無く、`OK   眠らせない: caffeinate がある（issue-run.mjs が実行中だけ使う）` があり、最後の行が `Result: PASS  WARN <数>` | 0 |
+| `issue-run.mjs --dry-run` | `[時刻] 対象 <数> 件: …`。Claude は起動しない | 0 |
+
+DryRun が `別の issue-run が動いている（PID …）。終了する。` で終了コード 3 になったら、ほかの窓の無人の回が終わってから回し直します。
+
+### M5 無人の回（K-7）
+
+自分のリポジトリ（Node 版を入れて、`origin` が GitHub にあるもの。付録 C の写しを自分の GitHub に上げたものでもよい）で、手順 6 のとおり Issue を 1 件作り、そのフォルダーで別のターミナルから `node scripts/issue-run/issue-run.mjs` を起動します。期待するのは、1 回目の起動で Issue に合格のコメントが付き、ラベルが `claude-done` になることです。回している間に Mac が眠らないこと（`caffeinate` が動いていること）を `pgrep -fl caffeinate` で見ます。
 
 ---
 

@@ -7,7 +7,7 @@ Claude Code に GitHub の Issue を**合格するまで無人で**進めさせ�
 > - **Unity 版**は使えます（KaedeScapeBuii で Issue 13 件が合格した実物の写し）。
 > - **Node 版**（Windows・Mac・Node.js だけ）は、**Windows で確かめました**（キットの試験・見本のプロジェクトに入れてテストの入口を 3 つで回す・点検・DryRun。キット自身も Node 版で Issue 駆動にしています）。
 > - **Windows で確かめた手順**（自分のリポジトリで Claude Code にキットのパスを示して入れるところから、点検と DryRun まで。出力つき）は、版ごとに 1 本ずつあります：[Windows で確かめる（Unity 版）](shared/manuals/issue-driven-kit-windows-check.md#windows-で確かめるunity-版)・[Windows で確かめる（Node 版）](shared/manuals/issue-driven-kit-windows-check.md#windows-で確かめるnode-版)。
-> - **Node 版は Mac（macOS 15.8.1 arm64）でも確かめました**（入れる脚本・テストの入口・点検・DryRun・無人の回で Issue 4 件が 1 回目で合格。#3）。版は導入ガイドの「[確かめた版](shared/manuals/issue-driven-kit-install-guide.md#確かめた版)」、ほかの Mac で確かめる手順は「[Mac で確かめる](shared/manuals/issue-driven-kit-install-guide.md#mac-で確かめる)」にあります。
+> - **Node 版は Mac（macOS 15.8.1 arm64）でも確かめました**（入れる脚本・テストの入口・点検・DryRun・無人の回で Issue 4 件が 1 回目で合格。#3）。版は導入ガイドの「[確かめた版](shared/manuals/issue-driven-kit-install-guide.md#確かめた版)」、ほかの Mac で確かめる手順は「[付録 D キットの受け入れの確かめ（Mac）](shared/manuals/issue-driven-kit-install-guide.md#付録-d-キットの受け入れの確かめmac)」にあります。
 
 ## 版を選ぶ
 
