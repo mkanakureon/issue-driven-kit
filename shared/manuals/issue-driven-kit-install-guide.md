@@ -78,9 +78,12 @@ flowchart LR
 
 ### 1.2 入れ方
 
+Claude Code は公式の手順（https://code.claude.com ）で入れます。手順は公式で変わるので、ここにはコマンドを写しません。
+
 **Windows**
 
 ```powershell
+winget install --id Git.Git -e
 winget install --id GitHub.cli -e
 winget install --id Microsoft.PowerShell -e                     # Unity 版だけ
 winget install --id OpenJS.NodeJS.22 --version 22.14.0 -e       # Node 版だけ
@@ -90,6 +93,7 @@ npm install -g npm@11.6.2                                       # Node 版だけ
 **Mac**（Node 版だけ）
 
 ```bash
+xcode-select --install                                          # git（コマンドライン・デベロッパ・ツール）
 brew install gh
 # Node.js 22.14.0 は公式の .pkg（https://nodejs.org/dist/v22.14.0/node-v22.14.0.pkg）で入れる（PATH が自動で通る）
 npm install -g npm@11.6.2
@@ -108,7 +112,7 @@ export PATH="$HOME/<入れた所>/bin:$PATH"
 入れるのを Claude Code に頼むこともできます（キットの元の作者は「pwshを入れて」「いれて」と入力しました）。
 
 ```text
-GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.6.2 にして
+git と GitHub CLI と Node.js 22.14.0 を入れて、npm を 11.6.2 にして
 ```
 
 ### 1.3 ログイン（人がする）
@@ -125,7 +129,17 @@ GitHub のログインは、人が `!` を付けて入力します（`!` で始�
 claude setup-token
 ```
 
-出た値は秘密の値です。**会話に貼らない**で、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れます（Windows はユーザーの環境変数、Mac は `~/.zprofile` に `export`）。PATH と長いトークンは、ターミナルの新しい窓（ログインのシェル）が読む `~/.zprofile` にそろえます。新しい窓を開いてから使います。無人の回が長く動く途中でログインが切れるのを防ぎます。
+出た値は秘密の値です。**会話に貼らない**で、自分で環境変数 `CLAUDE_CODE_OAUTH_TOKEN` に入れます。無人の回が長く動く途中でログインが切れるのを防ぎます。
+
+**Windows**
+
+ユーザーの環境変数に入れます（「設定 > システム > バージョン情報 > システムの詳細設定 > 環境変数」の「ユーザー環境変数」）。すでに開いている窓には渡りません。無人の回は起動した窓の環境変数を子へ渡すので、入れた後に開いた新しい窓で起動します。
+
+**Mac**
+
+`~/.zprofile` に `export CLAUDE_CODE_OAUTH_TOKEN=<値>` の 1 行を足します。PATH と長いトークンは、ターミナルの新しい窓（ログインのシェル）が読む `~/.zprofile` にそろえます。
+
+**確かめ方**（両方）：入れた後に開いた新しい窓で、キットを入れたリポジトリのフォルダーから `node scripts/issue-run/doctor.mjs` を回し（キットを入れるのは手順 4 なので、この確かめは 5.2 の点検のときに一緒にします）、`OK   長期トークン` の行が出ることを見ます（`WARN 長期トークン` なら、その窓に渡っていません）。
 
 ---
 
@@ -481,7 +495,7 @@ DryRun が `別の issue-run が動いている（PID …）。終了する。` 
 | 点検で「裸の CLAUDE.md の禁止」 | 禁止の設定に `Edit(CLAUDE.md)` がある | `//{{REPO}}/CLAUDE.md` の形にする（キットの設定はそうなっている） |
 | 無人の回が数分で 4 回を使い切った | ネットの切断（`ENOTFOUND` など） | 回線を確かめ、Issue のラベルを `claude-run` に戻して出し直す（「出し直して」） |
 | 実装の Issue が全部「設定を変えた」で落ちる | テストを初めて回したときにツールがファイルを作った | 実装の Issue を作る前に確認コマンドを 1 回回し、増えたファイルを先にコミットする |
-| Windows で無人の回の途中で止まった | PC が眠った | 「電源とスリープ」で、電源につないでいる間は眠らないようにする |
+| Windows で無人の回の途中で止まった | PC が眠った・再起動した | 「設定 > システム > 電源とバッテリー」で、電源につないでいる間は眠らないようにする。あわせて、蓋を閉じたときの動き（「蓋を閉じたときの動作」が「スリープ」になっていないか）と、Windows Update の再起動の時間帯（「アクティブ時間」に回す時間が入っているか）を見る（どちらも実測していないので、見る所として書いています） |
 | Mac で日本語が化ける・コマンドが見つからない | シェルの設定 | `node --version`・`gh --version`・`claude --version` が新しいターミナルで出るか確かめる |
 | Workers の試験が `ERR_RUNTIME_FAILURE` で 1 本も回らず、テストの入口が `Result: FAIL (0/1)` になる | `@cloudflare/vitest-plugin` の workerd が受け付ける `compatibility_date` には上限がある（1.4.0 は 2026-10-13）。`wrangler.jsonc` の `compatibility_date` がそれより新しい（今日の日付など） | `wrangler.jsonc` の `compatibility_date` を上限以下の日付にする。上限は vitest-plugin の版ごとに違うので、入れた版で確かめる |
 
